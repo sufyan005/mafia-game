@@ -25,6 +25,13 @@ export function GameBoard({
   onDoctorSave, 
   onDetectiveInvestigate 
 }: GameBoardProps) {
+  console.log('GameBoard state:', { 
+    roomGameState: room?.gameState, 
+    gameStateRole: gameState.role, 
+    gameStatePhase: gameState.phase,
+    playerRole: player?.role
+  });
+  
   if (!room || !player || room.gameState === 'waiting') {
     return (
       <div className="flex-1 p-6 flex items-center justify-center">
@@ -142,10 +149,18 @@ export function GameBoard({
   };
 
   const canTakeAction = () => {
-    if (!canVote || !gameState.phase) return false;
+    if (!canVote || !gameState.phase || !gameState.role) return false;
+    
+    console.log('Can take action check:', {
+      canVote,
+      phase: gameState.phase,
+      role: gameState.role,
+      isNight: gameState.phase === 'night',
+      isSpecialRole: ['mafia', 'doctor', 'detective'].includes(gameState.role)
+    });
     
     if (gameState.phase === 'night') {
-      return ['mafia', 'doctor', 'detective'].includes(gameState.role!);
+      return ['mafia', 'doctor', 'detective'].includes(gameState.role);
     } else if (gameState.phase === 'day') {
       return true;
     }
