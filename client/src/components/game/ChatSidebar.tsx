@@ -37,15 +37,26 @@ export function ChatSidebar({
     return null;
   }
 
-  const canSendMafiaChat = gameState.role === 'mafia' && gameState.phase === 'night';
-  const canSendPublicChat = gameState.phase === 'day';
+  const canSendMafiaChat = gameState.role === 'mafia' && gameState.phase === 'night' && player.isAlive;
+  const canSendPublicChat = gameState.phase === 'day' && player.isAlive;
   const canSendAnyChat = canSendMafiaChat || canSendPublicChat;
 
   const currentChatType = canSendMafiaChat ? 'mafia' : 'public';
-  const filteredMessages = chatMessages.filter(msg => 
-    msg.room === room.id && 
-    (msg.type === currentChatType || (msg.type === 'public' && gameState.phase === 'day'))
-  );
+  const filteredMessages = chatMessages.filter(msg => {
+    if (msg.room !== room.id) return false;
+    
+    // Show mafia messages only to mafia members during night
+    if (msg.type === 'mafia') {
+      return gameState.role === 'mafia';
+    }
+    
+    // Show public messages during day phase
+    if (msg.type === 'public') {
+      return true;
+    }
+    
+    return false;
+  });
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();

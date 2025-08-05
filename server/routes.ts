@@ -9,6 +9,7 @@ import {
   chatMessageInputSchema,
   doctorSaveSchema,
   detectiveInvestigateSchema,
+  startGameSchema,
   type ChatMessage 
 } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -83,16 +84,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     // Start game
-    socket.on('start-game', () => {
-      const player = storage.getPlayer(socket.id);
-      if (!player || !player.isOwner) {
-        socket.emit('error', { message: 'Only room owner can start the game' });
-        return;
-      }
+    socket.on('start-game', (data) => {
+      try {
+        const player = storage.getPlayer(socket.id);
+        if (!player || !player.isOwner) {
+          socket.emit('error', { message: 'Only room owner can start the game' });
+          return;
+        }
 
-      const success = gameLogic.startGame(player.room);
-      if (!success) {
-        socket.emit('error', { message: 'Cannot start game. Need 4-20 players.' });
+        const roleConfig = startGameSchema.parse(data);
+        const success = gameLogic.startGame(player.room, roleConfig);
+        if (!success) {
+          socket.emit('error', { message: 'Cannot start game. Check player count and role configuration.' });
+        }
+      } catch (error) {
+        socket.emit('error', { message: 'Invalid role configuration' });
       }
     });
 

@@ -1,4 +1,4 @@
-import { type Room, type Player } from "@shared/schema";
+import { type Room, type Player, type RoleConfig } from "@shared/schema";
 import { storage } from "./storage";
 import { Server as SocketIOServer } from "socket.io";
 
@@ -10,14 +10,22 @@ export class GameLogic {
     this.io = io;
   }
 
-  startGame(roomId: string): boolean {
+  startGame(roomId: string, roleConfig: RoleConfig): boolean {
     const room = storage.getRoom(roomId);
     if (!room || room.players.length < 4 || room.players.length > 20) {
       return false;
     }
 
+    const totalSpecialRoles = roleConfig.mafiaCount + roleConfig.doctorCount + roleConfig.detectiveCount;
+    if (totalSpecialRoles > room.players.length) {
+      return false;
+    }
+
+    // Store role configuration
+    room.roleConfig = roleConfig;
+
     // Assign roles randomly
-    this.assignRoles(room);
+    this.assignRoles(room, roleConfig);
     
     // Start night phase
     room.gameState = 'night';
@@ -49,14 +57,14 @@ export class GameLogic {
     return true;
   }
 
-  private assignRoles(room: Room): void {
+  private assignRoles(room: Room, roleConfig: RoleConfig): void {
     const players = [...room.players];
     const playerCount = players.length;
     
-    // Calculate role distribution
-    const mafiaCount = Math.floor(playerCount / 4) + 1; // At least 1 mafia, roughly 1/4 of players
-    const doctorCount = 1;
-    const detectiveCount = 1;
+    // Use configured role distribution
+    const mafiaCount = roleConfig.mafiaCount;
+    const doctorCount = roleConfig.doctorCount;
+    const detectiveCount = roleConfig.detectiveCount;
     const villagerCount = playerCount - mafiaCount - doctorCount - detectiveCount;
     
     const roles: string[] = [];

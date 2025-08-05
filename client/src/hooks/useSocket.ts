@@ -135,8 +135,8 @@ export function useSocket() {
     socketRef.current?.emit('join-room', { room: roomId, displayName });
   };
 
-  const startGame = () => {
-    socketRef.current?.emit('start-game');
+  const startGame = (config: { mafiaCount: number; doctorCount: number; detectiveCount: number }) => {
+    socketRef.current?.emit('start-game', config);
   };
 
   const vote = (target: string, phase: 'night' | 'day') => {

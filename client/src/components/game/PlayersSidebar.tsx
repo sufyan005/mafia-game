@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { type Room, type Player } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RoleConfigModal } from "./RoleConfigModal";
 
 interface PlayersSidebarProps {
   room: Room | null;
   player: Player | null;
-  onStartGame: () => void;
+  onStartGame: (config: { mafiaCount: number; doctorCount: number; detectiveCount: number }) => void;
 }
 
 export function PlayersSidebar({ room, player, onStartGame }: PlayersSidebarProps) {
+  const [showRoleConfig, setShowRoleConfig] = useState(false);
+
   if (!room) {
     return null;
   }
@@ -67,7 +71,7 @@ export function PlayersSidebar({ room, player, onStartGame }: PlayersSidebarProp
           </span>
           {canStartGame && (
             <Button 
-              onClick={onStartGame}
+              onClick={() => setShowRoleConfig(true)}
               className="bg-game-primary hover:bg-purple-700 text-white px-3 py-1 text-sm"
             >
               Start Game
@@ -154,6 +158,18 @@ export function PlayersSidebar({ room, player, onStartGame }: PlayersSidebarProp
             </Card>
           </div>
         </div>
+      )}
+
+      {/* Role Configuration Modal */}
+      {showRoleConfig && (
+        <RoleConfigModal
+          playerCount={room.players.length}
+          onStartGame={(config) => {
+            onStartGame(config);
+            setShowRoleConfig(false);
+          }}
+          onCancel={() => setShowRoleConfig(false)}
+        />
       )}
     </aside>
   );
