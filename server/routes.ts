@@ -110,6 +110,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (!success) {
           socket.emit('error', { message: 'Invalid vote' });
+        } else {
+          const player = storage.getPlayer(socket.id);
+          if (player) {
+            const room = storage.getRoom(player.room);
+            if (room) {
+              io.to(player.room).emit('room-updated', { room });
+            }
+          }
         }
       } catch (error) {
         socket.emit('error', { message: 'Invalid vote data' });
@@ -124,6 +132,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (!success) {
           socket.emit('error', { message: 'Invalid save action' });
+        } else {
+          const player = storage.getPlayer(socket.id);
+          if (player) {
+            const room = storage.getRoom(player.room);
+            if (room) {
+              io.to(player.room).emit('room-updated', { room });
+            }
+          }
         }
       } catch (error) {
         socket.emit('error', { message: 'Invalid save data' });
@@ -138,6 +154,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (!success) {
           socket.emit('error', { message: 'Invalid investigation' });
+        } else {
+          const player = storage.getPlayer(socket.id);
+          if (player) {
+            const room = storage.getRoom(player.room);
+            if (room) {
+              io.to(player.room).emit('room-updated', { room });
+            }
+          }
         }
       } catch (error) {
         socket.emit('error', { message: 'Invalid investigation data' });

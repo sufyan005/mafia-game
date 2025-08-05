@@ -17,6 +17,7 @@ interface SocketEvents {
   'vote-cast': (data: { voter: string; voterName: string; target: string; phase: string }) => void;
   'action-confirmed': (data: { action: string; target: string }) => void;
   'investigation-result': (data: { target: string; targetName: string; isMafia: boolean }) => void;
+  'room-updated': (data: { room: Room }) => void;
   'chat-message': (message: ChatMessage) => void;
   'error': (data: { message: string }) => void;
   'room-status': (data: { roomId: string; playerCount: number; gameState: string }) => void;
@@ -66,6 +67,15 @@ export function useSocket() {
       },
       
       'game-started': (data) => {
+        setRoom(data.room);
+        setGameState(prev => ({
+          ...prev,
+          phase: data.room.phase,
+          timer: data.room.timer
+        }));
+      },
+      
+      'room-updated': (data: { room: Room }) => {
         setRoom(data.room);
         setGameState(prev => ({
           ...prev,

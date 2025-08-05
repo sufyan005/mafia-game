@@ -25,13 +25,6 @@ export function GameBoard({
   onDoctorSave, 
   onDetectiveInvestigate 
 }: GameBoardProps) {
-  console.log('GameBoard state:', { 
-    roomGameState: room?.gameState, 
-    gameStateRole: gameState.role, 
-    gameStatePhase: gameState.phase,
-    playerRole: player?.role
-  });
-  
   if (!room || !player || room.gameState === 'waiting') {
     return (
       <div className="flex-1 p-6 flex items-center justify-center">
@@ -46,6 +39,37 @@ export function GameBoard({
 
   const alivePlayers = room.players.filter(p => p.isAlive && p.id !== player.id);
   const canVote = player.isAlive;
+  
+  // Check if current player has already made their action
+  const hasVoted = () => {
+    if (gameState.phase === 'night') {
+      if (gameState.role === 'mafia') {
+        return room.nightVotes && room.nightVotes[player.id];
+      } else if (gameState.role === 'doctor') {
+        return room.doctorSave === player.id || (room.doctorSave && room.doctorSave !== player.id);
+      } else if (gameState.role === 'detective') {
+        return room.detectiveInvestigation;
+      }
+    } else if (gameState.phase === 'day') {
+      return room.dayVotes && room.dayVotes[player.id];
+    }
+    return false;
+  };
+  
+  const getSelectedTarget = () => {
+    if (gameState.phase === 'night') {
+      if (gameState.role === 'mafia') {
+        return room.nightVotes?.[player.id];
+      } else if (gameState.role === 'doctor') {
+        return room.doctorSave;
+      } else if (gameState.role === 'detective') {
+        return room.detectiveInvestigation;
+      }
+    } else if (gameState.phase === 'day') {
+      return room.dayVotes?.[player.id];
+    }
+    return undefined;
+  };
   
 
   
@@ -254,48 +278,82 @@ export function GameBoard({
           <CardContent>
             <p className="text-gray-300 mb-4">
               {gameState.phase === 'night' && gameState.role === 'mafia' && 
-                'Choose a player to eliminate (all Mafia must agree):'}
+                'Choose a player to eliminate (all Mafia must agree). Click to change selection.'}
               {gameState.phase === 'night' && gameState.role === 'doctor' && 
-                'Choose a player to save (can save yourself):'}
+                'Choose a player to save (can save yourself). Click to change selection.'}
               {gameState.phase === 'night' && gameState.role === 'detective' && 
-                'Choose a player to investigate:'}
+                'Choose a player to investigate. Click to change selection.'}
               {gameState.phase === 'day' && 
-                'Vote to eliminate a player:'}
+                'Vote to eliminate a player. Click to change your vote.'}
             </p>
             
+            {hasVoted() && (
+              <div className="bg-green-900 border border-green-600 rounded p-3 mb-4">
+                <p className="text-green-200 text-sm">
+                  ✓ Your action has been recorded. You can still change your selection.
+                </p>
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {alivePlayers.map(targetPlayer => (
-                <Button
-                  key={targetPlayer.id}
-                  variant="outline"
-                  className="bg-gray-700 hover:bg-red-600 border-gray-600 hover:border-red-500 h-auto p-4 flex flex-col items-center space-y-2"
-                  onClick={() => handlePlayerAction(targetPlayer.id)}
-                >
-                  <div className="w-12 h-12 bg-gray-500 rounded-full flex items-center justify-center">
-                    <i className="fas fa-user text-gray-300"></i>
-                  </div>
-                  <div className="text-center">
-                    <p className="font-medium">{targetPlayer.displayName}</p>
-                    <p className="text-xs text-gray-400">Player</p>
-                  </div>
-                </Button>
-              ))}
+              {alivePlayers.map(targetPlayer => {
+                const isSelected = getSelectedTarget() === targetPlayer.id;
+                return (
+                  <Button
+                    key={targetPlayer.id}
+                    variant="outline"
+                    className={`${
+                      isSelected 
+                        ? 'bg-green-600 border-green-400 hover:bg-green-700' 
+                        : 'bg-gray-700 hover:bg-red-600 border-gray-600 hover:border-red-500'
+                    } h-auto p-4 flex flex-col items-center space-y-2`}
+                    onClick={() => handlePlayerAction(targetPlayer.id)}
+                  >
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      isSelected ? 'bg-green-500' : 'bg-gray-500'
+                    }`}>
+                      <i className={`fas ${isSelected ? 'fa-check' : 'fa-user'} ${
+                        isSelected ? 'text-white' : 'text-gray-300'
+                      }`}></i>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium">{targetPlayer.displayName}</p>
+                      <p className="text-xs text-gray-400">
+                        {isSelected ? 'Selected' : 'Player'}
+                      </p>
+                    </div>
+                  </Button>
+                );
+              })}
               
               {/* Add self-save option for doctor */}
               {gameState.phase === 'night' && gameState.role === 'doctor' && (
-                <Button
-                  variant="outline"
-                  className="bg-gray-700 hover:bg-green-600 border-gray-600 hover:border-green-500 h-auto p-4 flex flex-col items-center space-y-2"
-                  onClick={() => handlePlayerAction(player.id)}
-                >
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                    <i className="fas fa-user text-white"></i>
-                  </div>
-                  <div className="text-center">
-                    <p className="font-medium">Yourself</p>
-                    <p className="text-xs text-gray-400">Self-save</p>
-                  </div>
-                </Button>
+                (() => {
+                  const isSelected = getSelectedTarget() === player.id;
+                  return (
+                    <Button
+                      variant="outline"
+                      className={`${
+                        isSelected 
+                          ? 'bg-green-600 border-green-400 hover:bg-green-700' 
+                          : 'bg-gray-700 hover:bg-green-600 border-gray-600 hover:border-green-500'
+                      } h-auto p-4 flex flex-col items-center space-y-2`}
+                      onClick={() => handlePlayerAction(player.id)}
+                    >
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        isSelected ? 'bg-green-500' : 'bg-green-500'
+                      }`}>
+                        <i className={`fas ${isSelected ? 'fa-check' : 'fa-user'} text-white`}></i>
+                      </div>
+                      <div className="text-center">
+                        <p className="font-medium">Yourself</p>
+                        <p className="text-xs text-gray-400">
+                          {isSelected ? 'Selected' : 'Self-save'}
+                        </p>
+                      </div>
+                    </Button>
+                  );
+                })()
               )}
             </div>
           </CardContent>
