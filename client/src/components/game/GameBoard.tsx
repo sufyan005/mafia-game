@@ -259,7 +259,7 @@ export function GameBoard({
                   </div>
                   <div className="text-center">
                     <p className="font-medium">{targetPlayer.displayName}</p>
-                    <p className="text-xs text-gray-400">{targetPlayer.role || 'Unknown'}</p>
+                    <p className="text-xs text-gray-400">Player</p>
                   </div>
                 </Button>
               ))}

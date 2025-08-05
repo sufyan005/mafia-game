@@ -85,16 +85,16 @@ export function PlayersSidebar({ room, player, onStartGame }: PlayersSidebarProp
               p.isOwner ? 'bg-yellow-900 border border-yellow-600' : 'bg-gray-700'
             }`}>
               <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                p.isOwner ? 'bg-yellow-600' : getRoleColor(p.role)
+                p.isOwner ? 'bg-yellow-600' : p.id === player?.id ? getRoleColor(p.role) : 'bg-gray-600'
               }`}>
-                <i className={p.isOwner ? 'fas fa-crown text-yellow-200' : getRoleIcon(p.role)}></i>
+                <i className={p.isOwner ? 'fas fa-crown text-yellow-200' : p.id === player?.id ? getRoleIcon(p.role) : 'fas fa-user text-gray-400'}></i>
               </div>
               <div className="flex-1">
                 <p className={`font-medium ${p.isOwner ? 'text-yellow-200' : 'text-white'}`}>
                   {p.id === player?.id ? 'You' : p.displayName}
                 </p>
                 <p className={`text-xs ${p.isOwner ? 'text-yellow-300' : 'text-gray-400'}`}>
-                  {p.isOwner ? 'Room Owner' : (p.role ? p.role.charAt(0).toUpperCase() + p.role.slice(1) : 'Player')}
+                  {p.isOwner ? 'Room Owner' : (p.id === player?.id && p.role ? p.role.charAt(0).toUpperCase() + p.role.slice(1) : 'Player')}
                 </p>
               </div>
               <div className="flex items-center space-x-1">
@@ -122,7 +122,7 @@ export function PlayersSidebar({ room, player, onStartGame }: PlayersSidebarProp
                       {p.id === player?.id ? 'You' : p.displayName}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {p.role ? p.role.charAt(0).toUpperCase() + p.role.slice(1) : 'Player'}
+                      {p.id === player?.id && p.role ? p.role.charAt(0).toUpperCase() + p.role.slice(1) : 'Player'}
                     </p>
                   </div>
                   <div className="flex items-center space-x-1">
