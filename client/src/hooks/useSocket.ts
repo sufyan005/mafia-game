@@ -67,6 +67,11 @@ export function useSocket() {
       
       'game-started': (data) => {
         setRoom(data.room);
+        setGameState(prev => ({
+          ...prev,
+          phase: data.room.phase,
+          timer: data.room.timer
+        }));
       },
       
       'role-assigned': (data) => {

@@ -25,7 +25,7 @@ export function GameBoard({
   onDoctorSave, 
   onDetectiveInvestigate 
 }: GameBoardProps) {
-  if (!room || !player || !gameState.role) {
+  if (!room || !player || room.gameState === 'waiting') {
     return (
       <div className="flex-1 p-6 flex items-center justify-center">
         <div className="text-center">
@@ -39,6 +39,8 @@ export function GameBoard({
 
   const alivePlayers = room.players.filter(p => p.isAlive && p.id !== player.id);
   const canVote = player.isAlive;
+  
+
   
   const getRoleInfo = () => {
     switch (gameState.role) {
