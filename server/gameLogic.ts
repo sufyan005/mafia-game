@@ -427,7 +427,9 @@ export class GameLogic {
     const room = storage.getRoom(player.room);
     if (!room || room.phase !== 'night') return false;
 
+    // Doctor can save one person per night (can change selection until phase ends)
     room.doctorSave = target;
+    
     storage.updateRoom(room);
 
     this.io.to(playerId).emit('action-confirmed', {
@@ -448,7 +450,9 @@ export class GameLogic {
     const targetPlayer = room.players.find(p => p.id === target);
     if (!targetPlayer) return false;
 
+    // Detective can investigate one person per night (can change selection until phase ends)
     room.detectiveInvestigation = target;
+    
     storage.updateRoom(room);
 
     const isMafia = targetPlayer.role === 'mafia';
