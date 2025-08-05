@@ -1,0 +1,152 @@
+I'm building a real-time multiplayer Mafia game using:
+Node.js, Express, Socket.IO
+
+Plain HTML/CSS/JavaScript (no frameworks)
+
+I want you to implement the full backend game logic and real-time communication system. The frontend will be handled separately, so just provide minimal examples of how events are sent and received on the client side using Socket.IO.
+
+🌐 Game Overview
+Players join anonymously and select their own display name (e.g. via a prompt when joining).
+
+There are exactly 2 hardcoded rooms, no room creation UI:
+room1
+room2
+
+When a player joins a room, they are added to the list of players in that room.
+
+The first player to join a room becomes the room owner and gets a Start Game button.
+
+The game begins only when the owner clicks "Start Game".
+
+👥 Roles
+Roles are assigned randomly to players when the game starts:
+
+Mafia (can kill at night — must vote unanimously)
+
+Doctor (can save one person each night, including themselves)
+
+Detective (can investigate one person each night — optional implementation)
+
+Villagers (no special powers)
+
+There are minimum 4 and maximum 20 players.
+
+🌙 Night Phase (50 seconds)
+Mafia members:
+
+Can chat privately with each other using a night-only Mafia chat.
+
+Must agree on one player to kill (all votes must match).
+
+Doctor:
+
+Can select one player to save (can save themselves).
+
+Detective (optional for now):
+
+Can investigate one player to check if they are Mafia.
+
+➕ Add a 5-second break after night ends and before the day starts.
+
+During this break:
+
+If the Doctor saved the same person that the Mafia targeted, no one dies.
+
+If not, the targeted player is killed and becomes a spectator.
+
+☀️ Day Phase (90 seconds)
+All alive players can chat publicly.
+
+Each alive player gets one vote to eliminate someone.
+
+When the timer ends:
+
+If one player has the most votes, they are eliminated.
+
+If there is a tie, no one is eliminated.
+
+The eliminated player becomes a spectator.
+game end then owner can start new game then roles should reassign randomly.
+
+🔁 Game Loop
+After the day phase ends, the game automatically goes back to the night phase.
+
+The cycle continues until:
+
+🟢 Civilians win if all Mafia are eliminated.
+
+🔴 Mafia win if they equal or outnumber the non-Mafia players.
+
+🧠 Logic & Communication Requirements
+Use setTimeout() or setInterval() to manage the night/day timers.
+
+Use in-memory JavaScript objects to manage:
+
+Rooms and players
+
+Role assignments
+
+Alive/dead status
+
+Current votes and actions
+
+Use io.to(room).emit(...) to send events like:
+
+'phase-change' (night → day, day → night)
+
+'chat-message', 'mafia-chat-message'
+
+'vote-start', 'vote-end'
+
+'player-eliminated', 'player-saved'
+
+'game-over' with winner
+
+Support Socket.IO events for:
+
+Player joining room
+
+Player selecting display name
+
+Owner starting the game
+
+Voting during night/day
+
+Performing night actions (mafia, doctor, detective)
+
+⚠️ Important Constraints
+Do not use Firebase, database, or any UI frameworks.
+
+Everything must work with basic HTML/JS + Socket.IO frontend.
+
+Keep all code beginner-friendly and readable.
+
+Use expressive variable names.
+
+✅ Your job:
+
+Implement the Node.js + Express + Socket.IO backend for this game.
+
+Handle:
+
+Room joining and player tracking
+
+Role assignment
+
+Game phase transitions (night/day with timers)
+
+Voting logic (night kills, doctor saves, day eliminations)
+
+Win condition checking
+
+Emitting proper real-time events
+
+Give sample client-side Socket.IO code snippets to:
+
+Join room
+
+Listen for game events like 'phase-change', 'player-eliminated', 'game-over'
+
+Send chat and vote actions
+
+Please start from scratch. Keep everything in one server.js file. Make sure all game logic works based on the above rules.
