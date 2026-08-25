@@ -9,7 +9,7 @@ interface GameOverModalProps {
 }
 
 export function GameOverModal({ room, player, onRestartGame }: GameOverModalProps) {
-  const winners = room.winner === 'mafia' 
+  const winners = room.winner === 'mafia'
     ? room.players.filter(p => p.role === 'mafia')
     : room.players.filter(p => p.role !== 'mafia');
 
@@ -29,68 +29,88 @@ export function GameOverModal({ room, player, onRestartGame }: GameOverModalProp
   };
 
   const getWinnerIcon = () => {
-    return room.winner === 'mafia' ? 'fas fa-mask' : 'fas fa-shield-alt';
+    return room.winner === 'mafia' ? '🔪' : '🛡️';
   };
 
   const getWinnerColor = () => {
-    return room.winner === 'mafia' ? 'bg-red-600' : 'bg-green-600';
+    return room.winner === 'mafia'
+      ? 'bg-red-500 text-white'
+      : 'bg-green-500 text-white';
+  };
+
+  const getRoleIcon = (role?: string) => {
+    switch (role) {
+      case 'mafia':
+        return '🔪';
+      case 'doctor':
+        return '🩺';
+      case 'detective':
+        return '🕵️';
+      case 'villager':
+        return '👤';
+      default:
+        return '❓';
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="bg-game-secondary w-full max-w-md mx-4 border-gray-600">
-        <CardContent className="p-8">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <Card className="glass-card w-full max-w-md border-border/30">
+        <CardContent className="p-8 text-foreground">
           <div className="text-center">
-            <div className={`w-16 h-16 ${getWinnerColor()} rounded-full flex items-center justify-center mx-auto mb-4`}>
-              <i className={`${getWinnerIcon()} text-white text-2xl`}></i>
+            <div className={`w-20 h-20 ${getWinnerColor()} rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-white/20`}>
+              <span className="text-3xl">{getWinnerIcon()}</span>
             </div>
-            
+
             <h2 className="text-2xl font-bold mb-2">{getWinnerTitle()}</h2>
-            
+
             {isWinner && (
-              <div className="bg-yellow-900 border border-yellow-600 rounded-lg p-3 mb-4">
-                <p className="text-yellow-200 font-medium">🎉 Congratulations! You won! 🎉</p>
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-4">
+                <p className="text-yellow-300 font-medium">🎉 Congratulations! You won! 🎉</p>
               </div>
             )}
-            
-            <p className="text-gray-300 mb-6">
+
+            <p className="text-sm text-muted-foreground mb-6">
               {getWinnerDescription()}
             </p>
-            
+
             {/* Winner List */}
-            <Card className="bg-game-dark mb-6">
+            <Card className="glass-card border-border/30 mb-6">
               <CardHeader>
-                <CardTitle className="text-lg">Winners:</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Winners:</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   {winners.map(winner => (
-                    <div key={winner.id} className="flex items-center space-x-2 justify-center">
-                      <i className={`fas ${
-                        winner.role === 'mafia' ? 'fa-mask text-red-400' :
-                        winner.role === 'doctor' ? 'fa-user-md text-green-400' :
-                        winner.role === 'detective' ? 'fa-search text-blue-400' :
-                        'fa-user text-gray-400'
-                      }`}></i>
-                      <span>
+                    <div
+                      key={winner.id}
+                      className="flex items-center space-x-3 justify-center text-sm"
+                    >
+                      <span className="text-lg">{getRoleIcon(winner.role)}</span>
+                      <span className="font-medium">
                         {winner.id === player?.id ? 'You' : winner.displayName}
-                        {winner.role && ` (${winner.role.charAt(0).toUpperCase() + winner.role.slice(1)})`}
                       </span>
+                      {winner.role && (
+                        <span className="text-xs text-muted-foreground/70">
+                          ({winner.role.charAt(0).toUpperCase() + winner.role.slice(1)})
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
-            
+
             {canRestart ? (
-              <Button 
+              <Button
                 onClick={onRestartGame}
-                className="w-full bg-game-primary hover:bg-purple-700"
+                variant="ghost"
+                className="w-full bg-primary/20 hover:bg-primary/30 text-foreground border border-primary/30"
               >
                 Start New Game
               </Button>
             ) : (
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Waiting for room owner to start a new game...
               </p>
             )}

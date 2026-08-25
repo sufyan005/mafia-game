@@ -3,59 +3,26 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(0, 0%, 100%);
-  --foreground: hsl(20, 14.3%, 4.1%);
-  --muted: hsl(60, 4.8%, 95.9%);
-  --muted-foreground: hsl(25, 5.3%, 44.7%);
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(20, 14.3%, 4.1%);
-  --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(20, 14.3%, 4.1%);
-  --border: hsl(20, 5.9%, 90%);
-  --input: hsl(20, 5.9%, 90%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(60, 4.8%, 95.9%);
-  --secondary-foreground: hsl(24, 9.8%, 10%);
-  --accent: hsl(60, 4.8%, 95.9%);
-  --accent-foreground: hsl(24, 9.8%, 10%);
-  --destructive: hsl(0, 84.2%, 60.2%);
-  --destructive-foreground: hsl(60, 9.1%, 97.8%);
-  --ring: hsl(20, 14.3%, 4.1%);
-  --radius: 0.5rem;
-  
-  /* Game-specific color variables */
-  --game-primary: hsl(263, 82%, 58%);
-  --game-secondary: hsl(220, 18%, 20%);
-  --game-accent: hsl(0, 84%, 60%);
-  --game-success: hsl(158, 64%, 52%);
-  --game-warning: hsl(43, 96%, 56%);
-  --game-info: hsl(217, 91%, 60%);
-  --game-dark: hsl(220, 26%, 11%);
-  --game-light: hsl(210, 40%, 98%);
-}
-
-.dark {
-  --background: hsl(240, 10%, 3.9%);
-  --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(240, 3.7%, 15.9%);
-  --muted-foreground: hsl(240, 5%, 64.9%);
-  --popover: hsl(240, 10%, 3.9%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(240, 10%, 3.9%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(240, 3.7%, 15.9%);
-  --input: hsl(240, 3.7%, 15.9%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(240, 3.7%, 15.9%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(240, 3.7%, 15.9%);
-  --accent-foreground: hsl(0, 0%, 98%);
-  --destructive: hsl(0, 62.8%, 30.6%);
+  --background: hsl(220, 26%, 5%);
+  --foreground: hsl(0, 0%, 93%);
+  --muted: hsl(220, 26%, 9%);
+  --muted-foreground: hsl(220, 20%, 65%);
+  --popover: hsla(220, 26%, 8%, 0.4);
+  --popover-foreground: hsl(0, 0%, 93%);
+  --card: hsla(220, 26%, 8%, 0.4);
+  --card-foreground: hsl(0, 0%, 93%);
+  --border: hsla(220, 26%, 30%, 0.3);
+  --input: hsla(220, 26%, 30%, 0.3);
+  --primary: hsl(263, 82%, 58%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(220, 26%, 10%);
+  --secondary-foreground: hsl(0, 0%, 93%);
+  --accent: hsl(220, 40%, 60%);
+  --accent-foreground: hsl(0, 0%, 10%);
+  --destructive: hsl(0, 62.8%, 40%);
   --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(240, 4.9%, 83.9%);
-  --radius: 0.5rem;
+  --ring: hsl(263, 82%, 58%);
+  --radius: 1rem;
 }
 
 @layer base {
@@ -65,93 +32,108 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    background: radial-gradient(ellipse at top, hsla(263, 82%, 58%, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, hsla(220, 40%, 60%, 0.02) 0%, transparent 50%);
   }
 }
 
 @layer utilities {
+  /* Glassmorphism backgrounds */
+  .glass-bg {
+    background-color: hsla(220, 26%, 10%, 0.4);
+    border: 1px solid hsla(220, 26%, 30%, 0.3);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+  }
+
+  .glass-border {
+    border-color: hsla(220, 26%, 30%, 0.3);
+  }
+
+  .glass-hover:hover {
+    background-color: hsla(220, 26%, 15%, 0.5);
+  }
+
+  /* Game-specific colors */
   .bg-game-primary {
-    background-color: var(--game-primary);
+    background-color: var(--primary);
   }
-  
+
   .bg-game-secondary {
-    background-color: var(--game-secondary);
+    background-color: var(--secondary);
   }
-  
+
   .bg-game-accent {
-    background-color: var(--game-accent);
+    background-color: var(--accent);
   }
-  
-  .bg-game-success {
-    background-color: var(--game-success);
+
+  .bg-game-danger {
+    background-color: var(--destructive);
   }
-  
-  .bg-game-warning {
-    background-color: var(--game-warning);
-  }
-  
-  .bg-game-info {
-    background-color: var(--game-info);
-  }
-  
+
   .bg-game-dark {
-    background-color: var(--game-dark);
+    background-color: var(--background);
   }
-  
+
   .bg-game-light {
-    background-color: var(--game-light);
+    background-color: var(--foreground);
   }
-  
+
   .text-game-primary {
-    color: var(--game-primary);
+    color: var(--primary);
   }
-  
+
   .text-game-secondary {
-    color: var(--game-secondary);
+    color: var(--secondary);
   }
-  
+
   .text-game-accent {
-    color: var(--game-accent);
+    color: var(--accent);
   }
-  
-  .text-game-success {
-    color: var(--game-success);
+
+  .text-game-danger {
+    color: var(--destructive);
   }
-  
-  .text-game-warning {
-    color: var(--game-warning);
-  }
-  
-  .text-game-info {
-    color: var(--game-info);
-  }
-  
+
   .text-game-dark {
-    color: var(--game-dark);
+    color: var(--background);
   }
-  
+
   .text-game-light {
-    color: var(--game-light);
+    color: var(--foreground);
   }
-  
+
   .border-game-primary {
-    border-color: var(--game-primary);
+    border-color: var(--primary);
   }
-  
+
   .hover\:bg-game-primary:hover {
-    background-color: var(--game-primary);
+    background-color: var(--primary);
   }
-  
+
   .hover\:border-game-primary:hover {
-    border-color: var(--game-primary);
+    border-color: var(--primary);
   }
-  
+
   .focus\:border-game-primary:focus {
-    border-color: var(--game-primary);
+    border-color: var(--primary);
   }
 }
 
 @layer components {
   .font-game {
     font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  .glass-card {
+    background-color: hsla(220, 26%, 10%, 0.4);
+    border: 1px solid hsla(220, 26%, 30%, 0.3);
+    border-radius: 1rem;
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+  }
+
+  .font-mono {
+    font-family: 'Fira Code', 'Monaco', monospace;
   }
 }

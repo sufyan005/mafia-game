@@ -13,20 +13,23 @@ export function JoinRoomModal({ onJoinRoom }: JoinRoomModalProps) {
 
   const handleJoinRoom = () => {
     if (!displayName.trim() || !selectedRoom) return;
-    
+
     onJoinRoom(selectedRoom, displayName.trim());
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="bg-game-secondary w-full max-w-md mx-4 border-gray-600">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <Card className="glass-card w-full max-w-md border-border/30">
         <CardHeader>
-          <CardTitle className="text-center text-2xl">Join Mafia Game</CardTitle>
+          <CardTitle className="text-center text-xl font-bold">
+            <span className="mr-2">🎭</span>
+            Join Mafia Game
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Display Name Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Your Display Name
             </label>
             <Input
@@ -35,47 +38,48 @@ export function JoinRoomModal({ onJoinRoom }: JoinRoomModalProps) {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               maxLength={20}
-              className="bg-gray-700 border-gray-600 focus:border-game-primary"
+              className="bg-secondary/30 border-border/30 focus:border-primary text-sm placeholder-muted-foreground/50"
             />
           </div>
-          
+
           {/* Room Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Select Room
             </label>
             <div className="grid grid-cols-2 gap-3">
               <Button
                 variant={selectedRoom === 'room1' ? 'default' : 'outline'}
-                className={`h-auto p-4 flex flex-col ${
-                  selectedRoom === 'room1' 
-                    ? 'bg-game-primary hover:bg-purple-700' 
-                    : 'bg-gray-700 hover:bg-game-primary border-gray-600 hover:border-game-primary'
+                className={`h-auto p-4 flex flex-col transition-all ${
+                  selectedRoom === 'room1'
+                    ? 'bg-primary/20 hover:bg-primary/30 border border-primary/40 text-foreground'
+                    : 'bg-secondary/30 hover:bg-primary/20 border border-border/30 hover:border-primary/30 text-muted-foreground'
                 }`}
                 onClick={() => setSelectedRoom('room1')}
               >
-                <div className="font-medium">Room 1</div>
-                <div className="text-sm text-gray-400">Click to join</div>
+                <div className="font-medium text-lg">Room 1</div>
+                <div className="text-xs text-muted-foreground mt-1">Click to join</div>
               </Button>
               <Button
                 variant={selectedRoom === 'room2' ? 'default' : 'outline'}
-                className={`h-auto p-4 flex flex-col ${
-                  selectedRoom === 'room2' 
-                    ? 'bg-game-primary hover:bg-purple-700' 
-                    : 'bg-gray-700 hover:bg-game-primary border-gray-600 hover:border-game-primary'
+                className={`h-auto p-4 flex flex-col transition-all ${
+                  selectedRoom === 'room2'
+                    ? 'bg-primary/20 hover:bg-primary/30 border border-primary/40 text-foreground'
+                    : 'bg-secondary/30 hover:bg-primary/20 border border-border/30 hover:border-primary/30 text-muted-foreground'
                 }`}
                 onClick={() => setSelectedRoom('room2')}
               >
-                <div className="font-medium">Room 2</div>
-                <div className="text-sm text-gray-400">Click to join</div>
+                <div className="font-medium text-lg">Room 2</div>
+                <div className="text-xs text-muted-foreground mt-1">Click to join</div>
               </Button>
             </div>
           </div>
-          
-          <Button 
+
+          <Button
             onClick={handleJoinRoom}
             disabled={!displayName.trim() || !selectedRoom}
-            className="w-full bg-game-primary hover:bg-purple-700"
+            variant="ghost"
+            className="w-full bg-primary/20 hover:bg-primary/30 text-foreground border border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-secondary/30"
           >
             Join Game
           </Button>

@@ -1,4 +1,5 @@
-import { type Room } from "@shared/schema";
+import { type Room, type Player } from "@shared/schema";
+import { Button } from "@/components/ui/button";
 
 interface GameHeaderProps {
   room: Room | null;
@@ -6,9 +7,11 @@ interface GameHeaderProps {
     phase?: string;
     timer: number;
   };
+  player: Player | null;
+  onEndGame: () => void;
 }
 
-export function GameHeader({ room, gameState }: GameHeaderProps) {
+export function GameHeader({ room, gameState, player, onEndGame }: GameHeaderProps) {
   const formatTimer = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -17,7 +20,7 @@ export function GameHeader({ room, gameState }: GameHeaderProps) {
 
   const getPhaseDisplay = () => {
     if (!gameState.phase) return "Waiting for game to start";
-    
+
     switch (gameState.phase) {
       case 'night':
         return "Night Phase";
@@ -33,43 +36,57 @@ export function GameHeader({ room, gameState }: GameHeaderProps) {
   const getPhaseColor = () => {
     switch (gameState.phase) {
       case 'night':
-        return 'bg-blue-500';
+        return 'bg-blue-400';
       case 'day':
-        return 'bg-yellow-500';
+        return 'bg-amber-300';
       case 'break':
-        return 'bg-purple-500';
+        return 'bg-purple-400';
       default:
-        return 'bg-gray-500';
+        return 'bg-gray-400';
     }
   };
 
   return (
-    <header className="bg-game-dark border-b border-gray-600 px-6 py-4">
+    <header className="border-b border-border/30 px-6 py-4 glass-light">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-bold text-game-primary">
-            <i className="fas fa-mask mr-2"></i>
-            Mafia Game
+          <h1 className="text-xl font-bold text-primary flex items-center">
+            <span className="mr-2 w-6 h-6 flex items-center justify-center">🎭</span>
+            Mafia
           </h1>
           {room && (
-            <div className="bg-game-primary text-white px-3 py-1 rounded-full text-sm font-medium">
+            <div className="bg-primary/20 text-primary px-3 py-1 rounded-full text-sm font-medium border border-primary/30">
               {room.id === 'room1' ? 'Room 1' : 'Room 2'}
             </div>
           )}
         </div>
-        
+
         {room && (gameState.phase || gameState.timer > 0) && (
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             {/* Phase Indicator */}
-            <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 ${getPhaseColor()} rounded-full animate-pulse`}></div>
-              <span className="text-lg font-semibold">{getPhaseDisplay()}</span>
+            <div className="flex items-center space-x-2 px-3 py-1 rounded-lg bg-secondary/50 border border-border/30">
+              <div className={`w-2 h-2 ${getPhaseColor()} rounded-full animate-pulse`}></div>
+              <span className="text-sm font-medium text-muted-foreground">{getPhaseDisplay()}</span>
             </div>
-            
+
             {/* Timer */}
-            <div className="bg-game-warning text-game-dark px-4 py-2 rounded-lg font-bold text-xl">
+            <div className="px-4 py-2 rounded-lg bg-secondary/50 border border-border/30 font-mono font-bold text-sm text-foreground">
               {formatTimer(gameState.timer)}
             </div>
+
+            {/* End Game Button (owner only) */}
+            {player?.isOwner && room.gameState !== 'waiting' && (
+              <Button
+                onClick={onEndGame}
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:bg-destructive/10 border border-destructive/30"
+                title="End game immediately"
+              >
+                <span className="mr-1">⏹</span>
+                End Game
+              </Button>
+            )}
           </div>
         )}
       </div>

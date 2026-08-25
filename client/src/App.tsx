@@ -9,7 +9,6 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={GamePage} />
-      <Route component={GamePage} />
     </Switch>
   );
 }

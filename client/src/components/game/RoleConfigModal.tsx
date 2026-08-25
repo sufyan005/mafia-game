@@ -25,84 +25,90 @@ export function RoleConfigModal({ playerCount, onStartGame, onCancel }: RoleConf
     }
   };
 
+  const maxMafia = Math.floor(playerCount / 2);
+  const maxDoctors = Math.min(5, playerCount - mafiaCount - 1);
+  const maxDetectives = Math.min(5, playerCount - mafiaCount - doctorCount);
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="bg-game-secondary w-full max-w-md mx-4 border-gray-600">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <Card className="glass-card w-full max-w-md border-border/30 max-h-[90vh] flex flex-col">
         <CardHeader>
-          <CardTitle className="text-center text-xl">Configure Game Roles</CardTitle>
-          <p className="text-center text-sm text-gray-400">
+          <CardTitle className="text-center text-xl font-bold">
+            Configure Game Roles
+          </CardTitle>
+          <p className="text-center text-sm text-muted-foreground">
             Total Players: {playerCount}
           </p>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 overflow-y-auto">
           {/* Mafia Count */}
           <div>
-            <Label className="text-sm text-gray-300">
-              Mafia Members (1-{Math.floor(playerCount / 2)})
+            <Label className="text-sm text-muted-foreground mb-1 block">
+              Mafia Members (1-{maxMafia})
             </Label>
             <Input
               type="number"
               min={1}
-              max={Math.floor(playerCount / 2)}
+              max={maxMafia}
               value={mafiaCount}
-              onChange={(e) => setMafiaCount(Math.max(1, parseInt(e.target.value) || 1))}
-              className="bg-gray-700 border-gray-600 focus:border-red-400 mt-1"
+              onChange={(e) => setMafiaCount(Math.max(1, Math.min(maxMafia, parseInt(e.target.value) || 1)))}
+              className="bg-secondary/30 border-border/30 focus:border-red-400 text-sm placeholder-muted-foreground/50"
             />
           </div>
 
           {/* Doctor Count */}
           <div>
-            <Label className="text-sm text-gray-300">
-              Doctors (0-{Math.min(5, playerCount - mafiaCount - 1)})
+            <Label className="text-sm text-muted-foreground mb-1 block">
+              Doctors (0-{maxDoctors})
             </Label>
             <Input
               type="number"
               min={0}
-              max={Math.min(5, playerCount - mafiaCount - 1)}
+              max={maxDoctors}
               value={doctorCount}
-              onChange={(e) => setDoctorCount(Math.max(0, parseInt(e.target.value) || 0))}
-              className="bg-gray-700 border-gray-600 focus:border-green-400 mt-1"
+              onChange={(e) => setDoctorCount(Math.max(0, Math.min(maxDoctors, parseInt(e.target.value) || 0)))}
+              className="bg-secondary/30 border-border/30 focus:border-green-400 text-sm placeholder-muted-foreground/50"
             />
           </div>
 
           {/* Detective Count */}
           <div>
-            <Label className="text-sm text-gray-300">
-              Detectives (0-{Math.min(5, playerCount - mafiaCount - doctorCount)})
+            <Label className="text-sm text-muted-foreground mb-1 block">
+              Detectives (0-{maxDetectives})
             </Label>
             <Input
               type="number"
               min={0}
-              max={Math.min(5, playerCount - mafiaCount - doctorCount)}
+              max={maxDetectives}
               value={detectiveCount}
-              onChange={(e) => setDetectiveCount(Math.max(0, parseInt(e.target.value) || 0))}
-              className="bg-gray-700 border-gray-600 focus:border-blue-400 mt-1"
+              onChange={(e) => setDetectiveCount(Math.max(0, Math.min(maxDetectives, parseInt(e.target.value) || 0)))}
+              className="bg-secondary/30 border-border/30 focus:border-blue-400 text-sm placeholder-muted-foreground/50"
             />
           </div>
 
           {/* Role Summary */}
-          <Card className="bg-game-dark">
+          <Card className="glass-card border-border/30">
             <CardContent className="p-4">
-              <h4 className="font-medium mb-2">Role Distribution:</h4>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
+              <h4 className="font-medium mb-3 text-sm text-muted-foreground">Role Distribution:</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center">
                   <span className="text-red-400">Mafia:</span>
-                  <span>{mafiaCount}</span>
+                  <span className="font-medium text-foreground">{mafiaCount}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-green-400">Doctors:</span>
-                  <span>{doctorCount}</span>
+                  <span className="font-medium text-foreground">{doctorCount}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-blue-400">Detectives:</span>
-                  <span>{detectiveCount}</span>
+                  <span className="font-medium text-foreground">{detectiveCount}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-gray-400">Villagers:</span>
-                  <span>{villagerCount}</span>
+                  <span className="font-medium text-foreground">{villagerCount}</span>
                 </div>
-                <hr className="border-gray-600 my-2" />
-                <div className="flex justify-between font-medium">
+                <div className="border-t border-border/30 my-2"></div>
+                <div className="flex justify-between items-center font-medium">
                   <span>Total:</span>
                   <span className={totalSpecialRoles + villagerCount === playerCount ? 'text-green-400' : 'text-red-400'}>
                     {totalSpecialRoles + villagerCount}
@@ -113,29 +119,34 @@ export function RoleConfigModal({ playerCount, onStartGame, onCancel }: RoleConf
           </Card>
 
           {!isValid && (
-            <div className="bg-red-900 border border-red-600 rounded p-3">
-              <p className="text-red-200 text-sm">
-                {totalSpecialRoles > playerCount 
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+              <p className="text-red-300 text-xs">
+                {totalSpecialRoles > playerCount
                   ? "Too many special roles for the number of players!"
-                  : villagerCount < 1 
+                  : villagerCount < 1
                   ? "Need at least 1 villager!"
                   : "Invalid configuration"}
               </p>
             </div>
           )}
 
-          <div className="flex space-x-3">
-            <Button 
+          <div className="flex space-x-3 pt-2">
+            <Button
               onClick={onCancel}
-              variant="outline"
-              className="flex-1 border-gray-600 hover:bg-gray-700"
+              variant="ghost"
+              className="flex-1 bg-secondary/30 hover:bg-secondary/40 text-foreground border border-border/30"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleSubmit}
               disabled={!isValid}
-              className="flex-1 bg-game-primary hover:bg-purple-700"
+              variant="ghost"
+              className={`flex-1 transition-colors ${
+                isValid
+                  ? 'bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30'
+                  : 'bg-secondary/30 text-muted-foreground cursor-not-allowed border border-border/30'
+              }`}
             >
               Start Game
             </Button>

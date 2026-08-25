@@ -1,13 +1,17 @@
 import { type Room, type Player, type RoleConfig } from "@shared/schema";
 import { storage } from "./storage";
 import { Server as SocketIOServer } from "socket.io";
+import { ImmediateEventEmitter } from "./eventEmitter";
 
 export class GameLogic {
   private io: SocketIOServer;
   private timers: Map<string, NodeJS.Timeout> = new Map();
+  private pendingNightActions: Map<string, { mafiaTarget?: string; doctorSave?: string }> = new Map();
+  private eventEmitter: ImmediateEventEmitter;
 
   constructor(io: SocketIOServer) {
     this.io = io;
+    this.eventEmitter = new ImmediateEventEmitter(io);
   }
 
   startGame(roomId: string, roleConfig: RoleConfig): boolean {
@@ -27,32 +31,40 @@ export class GameLogic {
     // Assign roles randomly
     this.assignRoles(room, roleConfig);
     
-    // Start night phase
-    room.gameState = 'night';
-    room.phase = 'night';
-    room.timer = 50;
+    // Start break phase first (5 seconds), then transition to night
+    room.gameState = 'break';
+    room.phase = 'break';
+    room.timer = 5;
     room.nightVotes = {};
     room.dayVotes = {};
     room.doctorSave = undefined;
     room.detectiveInvestigation = undefined;
-    
+
     storage.updateRoom(room);
-    
-    // Notify all players
+
+    // Notify all players immediately
     this.io.to(roomId).emit('game-started', {
       room,
       players: room.players,
     });
-    
-    // Send individual role information
+
+    // Send individual role information immediately
     room.players.forEach(player => {
       this.io.to(player.id).emit('role-assigned', {
         role: player.role,
-        teammates: player.role === 'mafia' ? 
+        teammates: player.role === 'mafia' ?
           room.players.filter(p => p.role === 'mafia' && p.id !== player.id) : []
       });
     });
-    
+
+    // Emit immediate phase transition event
+    this.eventEmitter.emitPhaseTransition(roomId, 'waiting', 'break', 5);
+
+    this.io.to(roomId).emit('phase-change', {
+      phase: 'break',
+      timer: 5,
+    });
+
     this.startPhaseTimer(roomId);
     return true;
   }
@@ -136,6 +148,9 @@ export class GameLogic {
     // Process night actions
     const mafiaTarget = this.getMafiaConsensusTarget(room);
     const doctorSave = room.doctorSave;
+
+    // Store pending elimination for endBreakPhase to process
+    this.pendingNightActions.set(roomId, { mafiaTarget, doctorSave });
     
     // Start break phase
     room.gameState = 'break';
@@ -144,16 +159,16 @@ export class GameLogic {
     
     storage.updateRoom(room);
     
+    // Emit immediate phase transition
+    this.eventEmitter.emitPhaseTransition(roomId, 'night', 'break', 5);
+    
     this.io.to(roomId).emit('phase-change', {
       phase: 'break',
       timer: 5,
     });
 
-    // Process elimination after break
-    setTimeout(() => {
-      this.processNightElimination(roomId, mafiaTarget, doctorSave);
-    }, 5000);
-    
+    // The break phase timer will call endBreakPhase when timer reaches 0,
+    // which will process the night elimination via pendingNightActions
     this.startPhaseTimer(roomId);
   }
 
@@ -189,10 +204,16 @@ export class GameLogic {
     storage.updateRoom(room);
 
     if (eliminatedPlayer) {
+      // Emit immediate elimination event
+      this.eventEmitter.emitElimination(roomId, eliminatedPlayer, 'night');
+
       this.io.to(roomId).emit('player-eliminated', {
         player: eliminatedPlayer,
         reason: 'night',
       });
+
+      // Broadcast updated room state to all clients
+      this.io.to(roomId).emit('room-updated', { room });
     }
 
     // Check win conditions
@@ -284,6 +305,9 @@ export class GameLogic {
         reason: 'day',
         votes: voteCount,
       });
+
+      // Broadcast updated room state to all clients
+      this.io.to(roomId).emit('room-updated', { room });
     } else {
       this.io.to(roomId).emit('no-elimination', {
         reason: isTie ? 'tie' : 'no-votes',
@@ -308,6 +332,7 @@ export class GameLogic {
     room.phase = 'night';
     room.timer = 50;
     room.nightVotes = {};
+    room.dayVotes = {}; // Reset dayVotes every night for fresh voting
     room.doctorSave = undefined;
     room.detectiveInvestigation = undefined;
     
@@ -322,8 +347,21 @@ export class GameLogic {
   }
 
   private endBreakPhase(roomId: string): void {
-    // Break phase is handled by the processNightElimination timeout
-    // This method exists for completeness but shouldn't be called
+    const room = storage.getRoom(roomId);
+    if (!room) return;
+
+    // Check if there are pending night actions from endNightPhase
+    const pendingActions = this.pendingNightActions.get(roomId);
+    if (pendingActions) {
+      // Post-night break: process the night elimination
+      this.pendingNightActions.delete(roomId);
+
+      const { mafiaTarget, doctorSave } = pendingActions;
+      this.processNightElimination(roomId, mafiaTarget, doctorSave);
+    } else {
+      // Initial game-start break → transition to night
+      this.startNightPhase(roomId);
+    }
   }
 
   private getMafiaConsensusTarget(room: Room): string | undefined {
@@ -369,6 +407,11 @@ export class GameLogic {
     if (winner) {
       room.gameState = 'ended';
       room.winner = winner;
+      
+      // Reset all votes when game ends
+      room.nightVotes = {};
+      room.dayVotes = {};
+      
       storage.updateRoom(room);
 
       // Clear timer
@@ -377,6 +420,8 @@ export class GameLogic {
         clearInterval(timer);
         this.timers.delete(roomId);
       }
+      // Clear any pending night actions
+      this.pendingNightActions.delete(roomId);
 
       this.io.to(roomId).emit('game-over', {
         winner,
@@ -402,20 +447,37 @@ export class GameLogic {
     if (phase === 'night') {
       // Only mafia can vote at night
       if (player.role !== 'mafia') return false;
+      // Mafia cannot vote for their own teammates
+      const targetPlayer = room.players.find(p => p.id === target);
+      if (targetPlayer && targetPlayer.role === 'mafia') return false;
       room.nightVotes[playerId] = target;
     } else {
       // Anyone can vote during day
       room.dayVotes[playerId] = target;
+      
+      // Check if all alive players have voted
+      const alivePlayers = room.players.filter(p => p.isAlive);
+      const votedPlayers = Object.keys(room.dayVotes);
+      
+      if (votedPlayers.length === alivePlayers.length) {
+        // All players have voted, end day phase early
+        this.endDayPhase(player.room);
+      }
     }
 
     storage.updateRoom(room);
     
-    this.io.to(player.room).emit('vote-cast', {
-      voter: playerId,
-      voterName: player.displayName,
-      target,
-      phase,
-    });
+    const targetPlayer = room.players.find(p => p.id === target);
+    const targetName = targetPlayer ? targetPlayer.displayName : undefined;
+
+    if (targetName) {
+      this.io.to(player.room).emit('vote-cast', {
+        voter: playerId,
+        voterName: player.displayName,
+        target: targetName,
+        phase,
+      });
+    }
 
     return true;
   }
@@ -429,8 +491,9 @@ export class GameLogic {
 
     // Doctor can save one person per night (can change selection until phase ends)
     room.doctorSave = target;
-    
-    storage.updateRoom(room);
+
+    storage.updatePlayer(player);  // Update player state
+    storage.updateRoom(room);      // Update room state
 
     this.io.to(playerId).emit('action-confirmed', {
       action: 'save',
@@ -447,10 +510,15 @@ export class GameLogic {
     const room = storage.getRoom(player.room);
     if (!room || room.phase !== 'night') return false;
 
+    // Check if detective has already investigated someone this night
+    if (room.detectiveInvestigation) {
+      return false; // Already investigated someone this night
+    }
+
     const targetPlayer = room.players.find(p => p.id === target);
     if (!targetPlayer) return false;
 
-    // Detective can investigate one person per night (can change selection until phase ends)
+    // Detective can investigate one person per night
     room.detectiveInvestigation = target;
     
     storage.updateRoom(room);
@@ -500,8 +568,52 @@ export class GameLogic {
       clearInterval(timer);
       this.timers.delete(roomId);
     }
+    // Clear any pending night actions
+    this.pendingNightActions.delete(roomId);
 
     this.io.to(roomId).emit('game-restarted', { room });
+
+    return true;
+  }
+
+  endGame(roomId: string, playerId: string): boolean {
+    const room = storage.getRoom(roomId);
+    if (!room) return false;
+
+    const player = storage.getPlayer(playerId);
+    if (!player || !player.isOwner) return false;
+
+    // Reset game state
+    room.gameState = 'waiting';
+    room.phase = undefined;
+    room.timer = 0;
+    room.nightVotes = {};
+    room.dayVotes = {};
+    room.doctorSave = undefined;
+    room.detectiveInvestigation = undefined;
+    room.gameEvents = [];
+    room.winner = undefined;
+
+    // Reset all players
+    room.players.forEach(p => {
+      p.role = undefined;
+      p.isAlive = true;
+      p.votes = {};
+      storage.updatePlayer(p);
+    });
+
+    storage.updateRoom(room);
+
+    // Clear any existing timer
+    const timer = this.timers.get(roomId);
+    if (timer) {
+      clearInterval(timer);
+      this.timers.delete(roomId);
+    }
+    // Clear any pending night actions
+    this.pendingNightActions.delete(roomId);
+
+    this.io.to(roomId).emit('game-ended', { room });
 
     return true;
   }

@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import { storage } from "./storage";
 import { GameLogic } from "./gameLogic";
+import { ImmediateEventEmitter } from "./eventEmitter";
 import { 
   joinRoomSchema, 
   voteSchema, 
@@ -76,6 +77,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           player,
           room: updatedRoom,
         });
+
+        // Emit updated room state to all players including owner
+        io.to(room).emit('room-updated', { room: updatedRoom });
 
         console.log(`${displayName} joined ${room}`);
       } catch (error) {
@@ -239,6 +243,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
+    // End game (owner only, can be called at any time)
+    socket.on('end-game', () => {
+      const player = storage.getPlayer(socket.id);
+      if (!player || !player.isOwner) {
+        socket.emit('error', { message: 'Only room owner can end the game' });
+        return;
+      }
+
+      const success = gameLogic.endGame(player.room, socket.id);
+      if (!success) {
+        socket.emit('error', { message: 'Cannot end game' });
+      }
+    });
+
     // Get room status
     socket.on('get-room-status', (roomId: string) => {
       const room = storage.getRoom(roomId);
@@ -263,6 +281,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             player,
             room,
           });
+
+          // Emit updated room state to all players including owner
+          io.to(player.room).emit('room-updated', { room });
         }
         
         console.log(`${player.displayName} disconnected from ${player.room}`);

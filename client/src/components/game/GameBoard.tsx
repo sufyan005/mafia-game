@@ -12,50 +12,55 @@ interface GameBoardProps {
     teammates?: Player[];
     investigationResult?: { target: string; targetName: string; isMafia: boolean };
   };
+  gameEvents: Array<{ type: string; message: string; data: any; timestamp: number }>;
   onVote: (target: string, phase: 'night' | 'day') => void;
   onDoctorSave: (target: string) => void;
   onDetectiveInvestigate: (target: string) => void;
 }
 
-export function GameBoard({ 
-  room, 
-  player, 
-  gameState, 
-  onVote, 
-  onDoctorSave, 
-  onDetectiveInvestigate 
+export function GameBoard({
+  room,
+  player,
+  gameState,
+  gameEvents: immediateEvents,
+  onVote,
+  onDoctorSave,
+  onDetectiveInvestigate
 }: GameBoardProps) {
   if (!room || !player || room.gameState === 'waiting') {
     return (
       <div className="flex-1 p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🎭</div>
-          <h2 className="text-2xl font-bold mb-2">Waiting for game to start...</h2>
-          <p className="text-gray-400">The room owner can start the game when ready.</p>
-        </div>
+        <Card className="glass-card">
+          <CardContent className="p-8 text-center">
+            <div className="text-5xl mb-4">🎭</div>
+            <h2 className="text-xl font-semibold mb-2">Waiting for game to start...</h2>
+            <p className="text-muted-foreground text-sm">The room owner can start the game when ready.</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  const alivePlayers = room.players.filter(p => p.isAlive && p.id !== player.id);
+  // During night, mafia cannot target their own teammates
+  const alivePlayers = gameState.phase === 'night' && gameState.role === 'mafia'
+    ? room.players.filter(p => p.isAlive && p.id !== player.id && p.role !== 'mafia')
+    : room.players.filter(p => p.isAlive && p.id !== player.id);
   const canVote = player.isAlive;
-  
+
   // Check if current player has already made their action
   const hasVoted = () => {
     if (gameState.phase === 'night') {
       if (gameState.role === 'mafia') {
-        return room.nightVotes && room.nightVotes[player.id];
+        return Boolean(room.nightVotes && room.nightVotes[player.id]);
       } else if (gameState.role === 'doctor') {
-        return room.doctorSave === player.id || (room.doctorSave && room.doctorSave !== player.id);
-      } else if (gameState.role === 'detective') {
-        return room.detectiveInvestigation;
+        return Boolean(room.doctorSave !== undefined && room.doctorSave !== player.id);
       }
     } else if (gameState.phase === 'day') {
-      return room.dayVotes && room.dayVotes[player.id];
+      return Boolean(room.dayVotes && room.dayVotes[player.id]);
     }
     return false;
   };
-  
+
   const getSelectedTarget = () => {
     if (gameState.phase === 'night') {
       if (gameState.role === 'mafia') {
@@ -70,64 +75,71 @@ export function GameBoard({
     }
     return undefined;
   };
-  
 
-  
   const getRoleInfo = () => {
     switch (gameState.role) {
       case 'mafia':
         return {
           name: 'Mafia',
-          icon: 'fas fa-user-secret',
+          icon: '🔪',
           description: 'Work with other Mafia to eliminate civilians',
-          color: 'from-red-900 to-red-700',
-          iconColor: 'text-red-300',
+          gradient: 'from-red-500/20 to-red-500/10',
+          iconColor: 'text-red-400',
+          borderColor: 'border-red-500/30',
         };
       case 'doctor':
         return {
           name: 'Doctor',
-          icon: 'fas fa-user-md',
+          icon: '🩺',
           description: 'Save one person each night (including yourself)',
-          color: 'from-green-900 to-green-700',
-          iconColor: 'text-green-300',
+          gradient: 'from-green-500/20 to-green-500/10',
+          iconColor: 'text-green-400',
+          borderColor: 'border-green-500/30',
         };
       case 'detective':
         return {
           name: 'Detective',
-          icon: 'fas fa-search',
+          icon: '🕵️',
           description: 'Investigate one person each night to learn their role',
-          color: 'from-blue-900 to-blue-700',
-          iconColor: 'text-blue-300',
+          gradient: 'from-blue-500/20 to-blue-500/10',
+          iconColor: 'text-blue-400',
+          borderColor: 'border-blue-500/30',
         };
       case 'villager':
         return {
           name: 'Villager',
-          icon: 'fas fa-user',
+          icon: '👤',
           description: 'Help identify and vote out the Mafia',
-          color: 'from-gray-900 to-gray-700',
-          iconColor: 'text-gray-300',
+          gradient: 'from-gray-500/20 to-gray-500/10',
+          iconColor: 'text-gray-400',
+          borderColor: 'border-gray-500/30',
         };
       default:
         return {
           name: 'Unknown',
-          icon: 'fas fa-question',
+          icon: '❓',
           description: 'Unknown role',
-          color: 'from-gray-900 to-gray-700',
-          iconColor: 'text-gray-300',
+          gradient: 'from-gray-500/20 to-gray-500/10',
+          iconColor: 'text-gray-400',
+          borderColor: 'border-gray-500/30',
         };
     }
   };
 
   const roleInfo = getRoleInfo();
 
+  const currentPlayer = room?.players.find(p => p.id === player?.id) || player;
+
   const handlePlayerAction = (targetId: string) => {
     if (!canVote || !gameState.phase) return;
+    // Only block detective from changing once they've investigated this night
+    if (gameState.role === 'detective' && hasVoted()) return;
 
     if (gameState.phase === 'night') {
       if (gameState.role === 'mafia') {
         onVote(targetId, 'night');
       } else if (gameState.role === 'doctor') {
-        onDoctorSave(targetId);
+        onDoctorSave(targetId);  // Doctor can change target anytime during night
       } else if (gameState.role === 'detective') {
         onDetectiveInvestigate(targetId);
       }
@@ -174,47 +186,41 @@ export function GameBoard({
 
   const canTakeAction = () => {
     if (!canVote || !gameState.phase || !gameState.role) return false;
-    
-    console.log('Can take action check:', {
-      canVote,
-      phase: gameState.phase,
-      role: gameState.role,
-      isNight: gameState.phase === 'night',
-      isSpecialRole: ['mafia', 'doctor', 'detective'].includes(gameState.role)
-    });
-    
+
     if (gameState.phase === 'night') {
       return ['mafia', 'doctor', 'detective'].includes(gameState.role);
     } else if (gameState.phase === 'day') {
       return true;
     }
-    
+
     return false;
   };
 
   return (
     <div className="flex-1 p-6 overflow-y-auto">
       {/* Role Card */}
-      <Card className={`bg-gradient-to-r ${roleInfo.color} border-opacity-50 mb-6`}>
+      <Card className={`glass-card mb-6 ${roleInfo.borderColor} bg-gradient-to-r ${roleInfo.gradient}`}>
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Your Role</h2>
-              <div className="flex items-center space-x-3">
-                <i className={`${roleInfo.icon} text-3xl ${roleInfo.iconColor}`}></i>
-                <div>
-                  <p className="text-xl font-semibold text-white">{roleInfo.name}</p>
-                  <p className="text-gray-300 text-sm">{roleInfo.description}</p>
-                </div>
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-secondary/50 border border-border/30">
+                <span className="text-2xl">{roleInfo.icon}</span>
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-muted-foreground">Your Role</h2>
+                <p className="text-2xl font-bold text-foreground">{roleInfo.name}</p>
+                <p className="text-sm text-muted-foreground mt-1">{roleInfo.description}</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-300">Status</p>
+              <p className="text-sm text-muted-foreground mb-1">Status</p>
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                player.isAlive ? 'bg-green-800 text-green-200' : 'bg-red-800 text-red-200'
+                currentPlayer.isAlive
+                  ? 'bg-green-500/10 text-green-400 border border-green-500/30'
+                  : 'bg-red-500/10 text-red-400 border border-red-500/30'
               }`}>
-                <i className={`fas ${player.isAlive ? 'fa-heart' : 'fa-skull'} mr-1`}></i>
-                {player.isAlive ? 'Alive' : 'Dead'}
+                <span className={`w-2 h-2 ${currentPlayer.isAlive ? 'bg-green-400' : 'bg-red-400'} rounded-full mr-2`}></span>
+                {currentPlayer.isAlive ? 'Alive' : 'Dead'}
               </span>
             </div>
           </div>
@@ -223,20 +229,20 @@ export function GameBoard({
 
       {/* Teammates (for Mafia) */}
       {gameState.role === 'mafia' && gameState.teammates && gameState.teammates.length > 0 && (
-        <Card className="bg-game-dark mb-6">
+        <Card className="glass-card mb-6 border-red-500/30">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <i className="fas fa-users mr-2 text-red-400"></i>
+            <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
+              <span className="mr-2">👥</span>
               Your Mafia Partners
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               {gameState.teammates.map(teammate => (
-                <div key={teammate.id} className="flex items-center space-x-3 p-2 bg-red-900 bg-opacity-30 rounded">
-                  <i className="fas fa-user-secret text-red-400"></i>
-                  <span className="font-medium">{teammate.displayName}</span>
-                  <span className={`text-sm ${teammate.isAlive ? 'text-green-400' : 'text-red-400'}`}>
+                <div key={teammate.id} className="flex items-center space-x-3 p-2 bg-secondary/30 rounded-lg border border-border/20">
+                  <span className="text-red-400">🔪</span>
+                  <span className="font-medium text-foreground">{teammate.displayName}</span>
+                  <span className={`text-xs ${teammate.isAlive ? 'text-green-400' : 'text-red-400'}`}>
                     {teammate.isAlive ? 'Alive' : 'Dead'}
                   </span>
                 </div>
@@ -248,16 +254,16 @@ export function GameBoard({
 
       {/* Investigation Result */}
       {gameState.investigationResult && (
-        <Card className="bg-blue-900 border-blue-500 mb-6">
+        <Card className={`glass-card mb-6 border-blue-500/30`}>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <i className="fas fa-search mr-2 text-blue-400"></i>
+            <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
+              <span className="mr-2">🕵️</span>
               Investigation Result
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-blue-200">
-              <strong>{gameState.investigationResult.targetName}</strong> is{' '}
+            <p className="text-sm text-muted-foreground">
+              <strong className="text-foreground">{gameState.investigationResult.targetName}</strong> is{' '}
               <span className={gameState.investigationResult.isMafia ? 'text-red-400' : 'text-green-400'}>
                 {gameState.investigationResult.isMafia ? 'MAFIA' : 'NOT MAFIA'}
               </span>
@@ -268,127 +274,155 @@ export function GameBoard({
 
       {/* Action Area */}
       {canTakeAction() && alivePlayers.length > 0 && (
-        <Card className="bg-game-dark mb-6">
+        <Card className="glass-card mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <i className="fas fa-crosshairs mr-2 text-red-400"></i>
+            <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
+              <span className="mr-2">🎯</span>
               {getActionTitle()}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-300 mb-4">
-              {gameState.phase === 'night' && gameState.role === 'mafia' && 
+            <p className="text-muted-foreground text-sm mb-4">
+              {gameState.phase === 'night' && gameState.role === 'mafia' &&
                 'Choose a player to eliminate (all Mafia must agree). Click to change selection.'}
-              {gameState.phase === 'night' && gameState.role === 'doctor' && 
+              {gameState.phase === 'night' && gameState.role === 'doctor' &&
                 'Choose a player to save (can save yourself). Click to change selection.'}
-              {gameState.phase === 'night' && gameState.role === 'detective' && 
+              {gameState.phase === 'night' && gameState.role === 'detective' &&
                 'Choose a player to investigate. Click to change selection.'}
-              {gameState.phase === 'day' && 
+              {gameState.phase === 'day' &&
                 'Vote to eliminate a player. Click to change your vote.'}
             </p>
-            
+
             {hasVoted() && (
-              <div className="bg-green-900 border border-green-600 rounded p-3 mb-4">
-                <p className="text-green-200 text-sm">
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 mb-4">
+                <p className="text-green-400 text-sm">
                   ✓ Your action has been recorded. You can still change your selection.
                 </p>
               </div>
             )}
-            
+
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {alivePlayers.map(targetPlayer => {
                 const isSelected = getSelectedTarget() === targetPlayer.id;
                 return (
                   <Button
                     key={targetPlayer.id}
-                    variant="outline"
-                    className={`${
-                      isSelected 
-                        ? 'bg-green-600 border-green-400 hover:bg-green-700' 
-                        : 'bg-gray-700 hover:bg-red-600 border-gray-600 hover:border-red-500'
-                    } h-auto p-4 flex flex-col items-center space-y-2`}
+                    variant="ghost"
+                    disabled={hasVoted() && gameState.role !== 'doctor'}
+                    className={`h-auto p-4 flex flex-col space-y-2 transition-all ${
+                      isSelected
+                        ? 'bg-green-500/20 border border-green-500/50 hover:bg-green-500/30'
+                        : 'hover:bg-secondary/50 border border-transparent hover:border-destructive/30'
+                    }`}
                     onClick={() => handlePlayerAction(targetPlayer.id)}
                   >
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      isSelected ? 'bg-green-500' : 'bg-gray-500'
+                      isSelected ? 'bg-green-500' : 'bg-secondary/50 border border-border/30'
                     }`}>
-                      <i className={`fas ${isSelected ? 'fa-check' : 'fa-user'} ${
-                        isSelected ? 'text-white' : 'text-gray-300'
-                      }`}></i>
+                      <span className={`text-lg ${isSelected ? 'text-white' : 'text-muted-foreground'}`}>
+                        {targetPlayer.displayName.charAt(0).toUpperCase()}
+                      </span>
                     </div>
                     <div className="text-center">
-                      <p className="font-medium">{targetPlayer.displayName}</p>
-                      <p className="text-xs text-gray-400">
+                      <p className="font-medium text-foreground">{targetPlayer.displayName}</p>
+                      <p className="text-xs text-muted-foreground">
                         {isSelected ? 'Selected' : 'Player'}
                       </p>
                     </div>
                   </Button>
                 );
               })}
-              
+
               {/* Add self-save option for doctor */}
-              {gameState.phase === 'night' && gameState.role === 'doctor' && (
-                (() => {
-                  const isSelected = getSelectedTarget() === player.id;
-                  return (
-                    <Button
-                      variant="outline"
-                      className={`${
-                        isSelected 
-                          ? 'bg-green-600 border-green-400 hover:bg-green-700' 
-                          : 'bg-gray-700 hover:bg-green-600 border-gray-600 hover:border-green-500'
-                      } h-auto p-4 flex flex-col items-center space-y-2`}
-                      onClick={() => handlePlayerAction(player.id)}
-                    >
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        isSelected ? 'bg-green-500' : 'bg-green-500'
-                      }`}>
-                        <i className={`fas ${isSelected ? 'fa-check' : 'fa-user'} text-white`}></i>
-                      </div>
-                      <div className="text-center">
-                        <p className="font-medium">Yourself</p>
-                        <p className="text-xs text-gray-400">
-                          {isSelected ? 'Selected' : 'Self-save'}
-                        </p>
-                      </div>
-                    </Button>
-                  );
-                })()
-              )}
+              {gameState.phase === 'night' && gameState.role === 'doctor' && (() => {
+                const isSelected = getSelectedTarget() === player.id;
+                return (
+                  <Button
+                    variant="ghost"
+                    disabled={gameState.role !== 'doctor'}
+                    className={`h-auto p-4 flex flex-col space-y-2 transition-all ${
+                      isSelected
+                        ? 'bg-green-500/20 border border-green-500/50 hover:bg-green-500/30'
+                        : 'hover:bg-green-500/10 border border-green-500/30 hover:border-green-500/50'
+                    }`}
+                    onClick={() => handlePlayerAction(player.id)}
+                  >
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      isSelected ? 'bg-green-500' : 'bg-green-500/20 border border-green-500/30'
+                    }`}>
+                      <span className="text-lg text-white">
+                        {player.displayName.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium text-foreground">Yourself</p>
+                      <p className="text-xs text-muted-foreground">
+                        {isSelected ? 'Selected' : 'Self-save'}
+                      </p>
+                    </div>
+                  </Button>
+                );
+              })()}
             </div>
           </CardContent>
         </Card>
       )}
 
       {/* Game Events */}
-      <Card className="bg-game-dark">
+      <Card className="glass-card">
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <i className="fas fa-newspaper mr-2 text-game-info"></i>
+          <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
+            <span className="mr-2">📰</span>
             Game Events
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {room.gameEvents.length === 0 ? (
-              <p className="text-gray-400 text-center py-4">No events yet...</p>
-            ) : (
-              room.gameEvents.slice(-5).reverse().map((event, index) => (
-                <div key={index} className="flex items-start space-x-3 p-3 bg-gray-800 rounded-lg">
-                  <i className={`fas ${
-                    event.type === 'elimination' ? 'fa-skull text-red-400' :
-                    event.type === 'save' ? 'fa-shield-alt text-green-400' :
-                    'fa-info-circle text-blue-400'
-                  } mt-1`}></i>
+            {(() => {
+              // Merge immediate events with room events, deduplicating by message + timestamp
+              // Immediate events show right away; room events are the server's source of truth
+              const mergedEvents = [...room.gameEvents];
+              const seen = new Set(
+                room.gameEvents.map(e => `${e.message}-${e.timestamp}`)
+              );
+              immediateEvents.forEach(event => {
+                const key = `${event.message}-${event.timestamp}`;
+                if (!seen.has(key)) {
+                  mergedEvents.push(event);
+                  seen.add(key);
+                }
+              });
+              // Sort by timestamp (newest last), then show last 5 reversed
+              mergedEvents.sort((a, b) => a.timestamp - b.timestamp);
+              const recentEvents = mergedEvents.slice(-5).reverse();
+
+              if (recentEvents.length === 0) {
+                return <p className="text-muted-foreground text-center py-4 text-sm">No events yet...</p>;
+              }
+
+              return recentEvents.map((event, index) => (
+                <div key={`${event.timestamp}-${index}`} className="flex items-start space-x-3 p-3 bg-secondary/20 rounded-lg border border-border/20">
+                  <span className={`text-base mt-0.5 ${
+                    event.type === 'elimination' ? 'text-red-400' :
+                    event.type === 'save' ? 'text-green-400' :
+                    'text-muted-foreground'
+                  }`}>
+                    {event.type === 'elimination' ? '💀' :
+                     event.type === 'save' ? '🛡️' :
+                     'ℹ️'}
+                  </span>
                   <div>
-                    <p className="font-medium">{event.message}</p>
-                    <p className="text-sm text-gray-400">
-                      {new Date(event.timestamp).toLocaleTimeString()}
+                    <p className="font-medium text-sm text-foreground">{event.message}</p>
+                    <p className="text-xs text-muted-foreground/70">
+                      {new Date(event.timestamp).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </p>
                   </div>
                 </div>
-              ))
-            )}
+              ));
+            })()}
           </div>
         </CardContent>
       </Card>

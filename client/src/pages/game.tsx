@@ -6,6 +6,7 @@ import { PlayersSidebar } from "@/components/game/PlayersSidebar";
 import { JoinRoomModal } from "@/components/game/JoinRoomModal";
 import { GameOverModal } from "@/components/game/GameOverModal";
 
+
 export default function GamePage() {
   const socket = useSocket();
   const { room, player, gameState, isConnected } = socket;
@@ -15,33 +16,43 @@ export default function GamePage() {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen bg-game-dark text-game-light flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-game-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-lg">Connecting to game server...</p>
+      <div className="min-h-screen bg-gradient-to-b from-[hsl(220,26%,8%)] to-[hsl(220,26%,5%)] text-foreground flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-muted-foreground">Connecting to game server...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-game-dark text-game-light font-game min-h-screen">
+    <div className="min-h-screen bg-gradient-to-b from-[hsl(220,26%,8%)] to-[hsl(220,26%,5%)] text-foreground font-game">
       <div className="flex flex-col lg:flex-row h-screen overflow-hidden">
         {/* Main Game Area */}
-        <main className="flex-1 flex flex-col bg-game-secondary">
-          <GameHeader room={room} gameState={gameState} />
-          
+        <main className="flex-1 flex flex-col">
+          <GameHeader
+            room={room}
+            gameState={gameState}
+            player={player}
+            onEndGame={() => {
+              if (window.confirm('Are you sure you want to end the game? All players will be returned to the lobby.')) {
+                socket.endGame();
+              }
+            }}
+          />
+
           <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-            <GameBoard 
-              room={room} 
-              player={player} 
+            <GameBoard
+              room={room}
+              player={player}
               gameState={gameState}
+              gameEvents={socket.gameEvents}
               onVote={socket.vote}
               onDoctorSave={socket.doctorSave}
               onDetectiveInvestigate={socket.detectiveInvestigate}
             />
-            
-            <ChatSidebar 
+
+            <ChatSidebar
               room={room}
               player={player}
               chatMessages={socket.chatMessages}
@@ -52,7 +63,7 @@ export default function GamePage() {
         </main>
 
         {/* Players Sidebar */}
-        <PlayersSidebar 
+        <PlayersSidebar
           room={room}
           player={player}
           onStartGame={socket.startGame}
@@ -63,9 +74,9 @@ export default function GamePage() {
       {showJoinModal && (
         <JoinRoomModal onJoinRoom={socket.joinRoom} />
       )}
-      
+
       {showGameOverModal && room && (
-        <GameOverModal 
+        <GameOverModal
           room={room}
           player={player}
           onRestartGame={socket.restartGame}
