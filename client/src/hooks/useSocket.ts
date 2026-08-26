@@ -102,9 +102,13 @@ export function useSocket() {
       'room-updated': (data: { room: Room }) => {
         setRoom(data.room);
         // Also update the current player from the room's players
-        const updatedPlayer = data.room.players.find(p => p.id === player?.id);
-        if (updatedPlayer) {
-          setPlayer(updatedPlayer);
+        // Use a ref-backed lookup to avoid stale closure issues
+        const currentSocketId = socketRef.current?.id;
+        if (currentSocketId) {
+          const updatedPlayer = data.room.players.find(p => p.id === currentSocketId);
+          if (updatedPlayer) {
+            setPlayer(updatedPlayer);
+          }
         }
         setGameState(prev => ({
           ...prev,

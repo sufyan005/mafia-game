@@ -388,7 +388,7 @@ export class GameLogic {
     return undefined;
   }
 
-  private checkWinConditions(roomId: string): boolean {
+  checkWinConditions(roomId: string): boolean {
     const room = storage.getRoom(roomId);
     if (!room) return false;
 

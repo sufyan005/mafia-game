@@ -273,8 +273,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     socket.on('disconnect', () => {
       const player = storage.getPlayer(socket.id);
       if (player) {
+        // Check if game is in progress before removing player
+        const roomBeforeRemoval = storage.getRoom(player.room);
+        const isGameInProgress = roomBeforeRemoval && roomBeforeRemoval.gameState !== 'waiting';
+
         storage.removePlayerFromRoom(player.room, socket.id);
-        
+
         const room = storage.getRoom(player.room);
         if (room) {
           socket.to(player.room).emit('player-left', {
@@ -284,8 +288,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Emit updated room state to all players including owner
           io.to(player.room).emit('room-updated', { room });
+
+          // If game was in progress, check win conditions (disconnected player is treated as eliminated)
+          if (isGameInProgress) {
+            const gameEndedByDisconnect = gameLogic.checkWinConditions(player.room);
+            if (gameEndedByDisconnect) {
+              console.log(`Game in room ${player.room} ended due to player disconnect`);
+            }
+          }
         }
-        
+
         console.log(`${player.displayName} disconnected from ${player.room}`);
       }
     });
