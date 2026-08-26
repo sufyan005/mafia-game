@@ -47,10 +47,10 @@ export function JoinRoomModal({ onJoinRoom }: JoinRoomModalProps) {
             <label className="block text-sm font-medium text-muted-foreground mb-2">
               Select Room
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <Button
                 variant={selectedRoom === 'room1' ? 'default' : 'outline'}
-                className={`h-auto p-4 flex flex-col transition-all ${
+                className={`h-auto p-3 sm:p-4 flex flex-col transition-all touch-target ${
                   selectedRoom === 'room1'
                     ? 'bg-primary/20 hover:bg-primary/30 border border-primary/40 text-foreground'
                     : 'bg-secondary/30 hover:bg-primary/20 border border-border/30 hover:border-primary/30 text-muted-foreground'
@@ -62,7 +62,7 @@ export function JoinRoomModal({ onJoinRoom }: JoinRoomModalProps) {
               </Button>
               <Button
                 variant={selectedRoom === 'room2' ? 'default' : 'outline'}
-                className={`h-auto p-4 flex flex-col transition-all ${
+                className={`h-auto p-3 sm:p-4 flex flex-col transition-all touch-target ${
                   selectedRoom === 'room2'
                     ? 'bg-primary/20 hover:bg-primary/30 border border-primary/40 text-foreground'
                     : 'bg-secondary/30 hover:bg-primary/20 border border-border/30 hover:border-primary/30 text-muted-foreground'

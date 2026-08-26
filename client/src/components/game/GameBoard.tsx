@@ -29,11 +29,11 @@ export function GameBoard({
 }: GameBoardProps) {
   if (!room || !player || room.gameState === 'waiting') {
     return (
-      <div className="flex-1 p-6 flex items-center justify-center">
+      <div className="flex-1 p-4 sm:p-6 flex items-center justify-center">
         <Card className="glass-card">
-          <CardContent className="p-8 text-center">
-            <div className="text-5xl mb-4">🎭</div>
-            <h2 className="text-xl font-semibold mb-2">Waiting for game to start...</h2>
+          <CardContent className="p-6 sm:p-8 text-center">
+            <div className="text-4xl sm:text-5xl mb-3 sm:mb-4">🎭</div>
+            <h2 className="text-lg sm:text-xl font-semibold mb-2">Waiting for game to start...</h2>
             <p className="text-muted-foreground text-sm">The room owner can start the game when ready.</p>
           </CardContent>
         </Card>
@@ -197,29 +197,29 @@ export function GameBoard({
   };
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto">
+    <div className="flex-1 p-4 sm:p-6 overflow-y-auto">
       {/* Role Card */}
-      <Card className={`glass-card mb-6 ${roleInfo.borderColor} bg-gradient-to-r ${roleInfo.gradient}`}>
-        <CardContent className="p-6">
+      <Card className={`glass-card mb-4 sm:mb-6 ${roleInfo.borderColor} bg-gradient-to-r ${roleInfo.gradient}`}>
+        <CardContent className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-secondary/50 border border-border/30">
-                <span className="text-2xl">{roleInfo.icon}</span>
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center bg-secondary/50 border border-border/30">
+                <span className="text-xl sm:text-2xl">{roleInfo.icon}</span>
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-muted-foreground">Your Role</h2>
-                <p className="text-2xl font-bold text-foreground">{roleInfo.name}</p>
+                <h2 className="text-sm font-semibold text-muted-foreground">Your Role</h2>
+                <p className="text-xl sm:text-2xl font-bold text-foreground">{roleInfo.name}</p>
                 <p className="text-sm text-muted-foreground mt-1">{roleInfo.description}</p>
               </div>
             </div>
             <div className="text-right">
               <p className="text-sm text-muted-foreground mb-1">Status</p>
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+              <span className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
                 currentPlayer.isAlive
                   ? 'bg-green-500/10 text-green-400 border border-green-500/30'
                   : 'bg-red-500/10 text-red-400 border border-red-500/30'
               }`}>
-                <span className={`w-2 h-2 ${currentPlayer.isAlive ? 'bg-green-400' : 'bg-red-400'} rounded-full mr-2`}></span>
+                <span className={`w-2 h-2 ${currentPlayer.isAlive ? 'bg-green-400' : 'bg-red-400'} rounded-full mr-1 sm:mr-2`}></span>
                 {currentPlayer.isAlive ? 'Alive' : 'Dead'}
               </span>
             </div>
@@ -229,14 +229,14 @@ export function GameBoard({
 
       {/* Teammates (for Mafia) */}
       {gameState.role === 'mafia' && gameState.teammates && gameState.teammates.length > 0 && (
-        <Card className="glass-card mb-6 border-red-500/30">
+        <Card className="glass-card mb-4 sm:mb-6 border-red-500/30">
           <CardHeader>
             <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
               <span className="mr-2">👥</span>
               Your Mafia Partners
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             <div className="space-y-2">
               {gameState.teammates.map(teammate => (
                 <div key={teammate.id} className="flex items-center space-x-3 p-2 bg-secondary/30 rounded-lg border border-border/20">
@@ -254,14 +254,14 @@ export function GameBoard({
 
       {/* Investigation Result */}
       {gameState.investigationResult && (
-        <Card className={`glass-card mb-6 border-blue-500/30`}>
+        <Card className={`glass-card mb-4 sm:mb-6 border-blue-500/30`}>
           <CardHeader>
             <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
               <span className="mr-2">🕵️</span>
               Investigation Result
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">
               <strong className="text-foreground">{gameState.investigationResult.targetName}</strong> is{' '}
               <span className={gameState.investigationResult.isMafia ? 'text-red-400' : 'text-green-400'}>
@@ -274,15 +274,15 @@ export function GameBoard({
 
       {/* Action Area */}
       {canTakeAction() && alivePlayers.length > 0 && (
-        <Card className="glass-card mb-6">
+        <Card className="glass-card mb-4 sm:mb-6">
           <CardHeader>
             <CardTitle className="flex items-center text-sm font-medium text-muted-foreground">
               <span className="mr-2">🎯</span>
               {getActionTitle()}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-sm mb-4">
+          <CardContent className="p-4">
+            <p className="text-muted-foreground text-sm mb-3">
               {gameState.phase === 'night' && gameState.role === 'mafia' &&
                 'Choose a player to eliminate (all Mafia must agree). Click to change selection.'}
               {gameState.phase === 'night' && gameState.role === 'doctor' &&
@@ -294,7 +294,7 @@ export function GameBoard({
             </p>
 
             {hasVoted() && (
-              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 mb-4">
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 mb-3">
                 <p className="text-green-400 text-sm">
                   ✓ Your action has been recorded. You can still change your selection.
                 </p>
@@ -309,14 +309,14 @@ export function GameBoard({
                     key={targetPlayer.id}
                     variant="ghost"
                     disabled={hasVoted() && gameState.role !== 'doctor'}
-                    className={`h-auto p-4 flex flex-col space-y-2 transition-all ${
+                    className={`h-auto p-3 sm:p-4 flex flex-col space-y-1 sm:space-y-2 transition-all touch-target ${
                       isSelected
                         ? 'bg-green-500/20 border border-green-500/50 hover:bg-green-500/30'
                         : 'hover:bg-secondary/50 border border-transparent hover:border-destructive/30'
                     }`}
                     onClick={() => handlePlayerAction(targetPlayer.id)}
                   >
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ${
                       isSelected ? 'bg-green-500' : 'bg-secondary/50 border border-border/30'
                     }`}>
                       <span className={`text-lg ${isSelected ? 'text-white' : 'text-muted-foreground'}`}>
@@ -324,7 +324,7 @@ export function GameBoard({
                       </span>
                     </div>
                     <div className="text-center">
-                      <p className="font-medium text-foreground">{targetPlayer.displayName}</p>
+                      <p className="font-medium text-foreground text-xs sm:text-sm">{targetPlayer.displayName}</p>
                       <p className="text-xs text-muted-foreground">
                         {isSelected ? 'Selected' : 'Player'}
                       </p>
@@ -340,14 +340,14 @@ export function GameBoard({
                   <Button
                     variant="ghost"
                     disabled={gameState.role !== 'doctor'}
-                    className={`h-auto p-4 flex flex-col space-y-2 transition-all ${
+                    className={`h-auto p-3 sm:p-4 flex flex-col space-y-1 sm:space-y-2 transition-all touch-target ${
                       isSelected
                         ? 'bg-green-500/20 border border-green-500/50 hover:bg-green-500/30'
                         : 'hover:bg-green-500/10 border border-green-500/30 hover:border-green-500/50'
                     }`}
                     onClick={() => handlePlayerAction(player.id)}
                   >
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ${
                       isSelected ? 'bg-green-500' : 'bg-green-500/20 border border-green-500/30'
                     }`}>
                       <span className="text-lg text-white">
@@ -355,7 +355,7 @@ export function GameBoard({
                       </span>
                     </div>
                     <div className="text-center">
-                      <p className="font-medium text-foreground">Yourself</p>
+                      <p className="font-medium text-foreground text-xs sm:text-sm">Yourself</p>
                       <p className="text-xs text-muted-foreground">
                         {isSelected ? 'Selected' : 'Self-save'}
                       </p>
@@ -376,7 +376,7 @@ export function GameBoard({
             Game Events
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4">
           <div className="space-y-3">
             {(() => {
               // Merge immediate events with room events, deduplicating by message + timestamp

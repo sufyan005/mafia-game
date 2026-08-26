@@ -56,13 +56,13 @@ export function GameOverModal({ room, player, onRestartGame }: GameOverModalProp
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <Card className="glass-card w-full max-w-md border-border/30">
-        <CardContent className="p-8 text-foreground">
+        <CardContent className="p-4 sm:p-8 text-foreground">
           <div className="text-center">
-            <div className={`w-20 h-20 ${getWinnerColor()} rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-white/20`}>
-              <span className="text-3xl">{getWinnerIcon()}</span>
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 ${getWinnerColor()} rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 border-2 border-white/20`}>
+              <span className="text-2xl sm:text-3xl">{getWinnerIcon()}</span>
             </div>
 
-            <h2 className="text-2xl font-bold mb-2">{getWinnerTitle()}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">{getWinnerTitle()}</h2>
 
             {isWinner && (
               <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-4">
@@ -75,16 +75,16 @@ export function GameOverModal({ room, player, onRestartGame }: GameOverModalProp
             </p>
 
             {/* Winner List */}
-            <Card className="glass-card border-border/30 mb-6">
+            <Card className="glass-card border-border/30 mb-4 sm:mb-6">
               <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground">Winners:</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Winners:</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   {winners.map(winner => (
                     <div
                       key={winner.id}
-                      className="flex items-center space-x-3 justify-center text-sm"
+                      className="flex items-center space-x-2 sm:space-x-3 justify-center text-xs sm:text-sm"
                     >
                       <span className="text-lg">{getRoleIcon(winner.role)}</span>
                       <span className="font-medium">

@@ -130,11 +130,11 @@ export function RoleConfigModal({ playerCount, onStartGame, onCancel }: RoleConf
             </div>
           )}
 
-          <div className="flex space-x-3 pt-2">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-2">
             <Button
               onClick={onCancel}
               variant="ghost"
-              className="flex-1 bg-secondary/30 hover:bg-secondary/40 text-foreground border border-border/30"
+              className="flex-1 bg-secondary/30 hover:bg-secondary/40 text-foreground border border-border/30 touch-target"
             >
               Cancel
             </Button>
@@ -142,7 +142,7 @@ export function RoleConfigModal({ playerCount, onStartGame, onCancel }: RoleConf
               onClick={handleSubmit}
               disabled={!isValid}
               variant="ghost"
-              className={`flex-1 transition-colors ${
+              className={`flex-1 transition-colors touch-target ${
                 isValid
                   ? 'bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30'
                   : 'bg-secondary/30 text-muted-foreground cursor-not-allowed border border-border/30'

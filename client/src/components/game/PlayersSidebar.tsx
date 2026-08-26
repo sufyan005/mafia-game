@@ -20,6 +20,7 @@ export function PlayersSidebar({ room, player, onStartGame }: PlayersSidebarProp
   const alivePlayers = room.players.filter(p => p.isAlive);
   const deadPlayers = room.players.filter(p => !p.isAlive);
   const canStartGame = player?.isOwner && room.gameState === 'waiting' && room.players.length >= 4;
+  const isMobileView = typeof window !== 'undefined' && window.innerWidth < 1024;
 
   const getRoleIcon = (role?: string) => {
     switch (role) {
@@ -61,9 +62,9 @@ export function PlayersSidebar({ room, player, onStartGame }: PlayersSidebarProp
   const { mafiaAlive, civiliansAlive } = getGameStats();
 
   return (
-    <aside className="w-full lg:w-72 glass-card border-l border-border/30 flex flex-col">
+    <aside className="flex w-full lg:w-72 glass-card border-l border-border/30 flex-col h-full">
       {/* Players Header */}
-      <div className="p-4 border-b border-border/30">
+      <div className="p-3 sm:p-4 border-b border-border/30">
         <div className="flex items-center justify-between">
           <h3 className="font-medium flex items-center text-sm text-muted-foreground">
             <span className="mr-2">👥</span>
@@ -73,28 +74,29 @@ export function PlayersSidebar({ room, player, onStartGame }: PlayersSidebarProp
             <Button
               onClick={() => setShowRoleConfig(true)}
               variant="ghost"
-              className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 text-xs px-3 py-1"
+              className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 text-xs px-2 sm:px-3 py-1 touch-target"
             >
-              Start Game
+              <span className="hidden sm:inline">Start Game</span>
+              <span className="sm:hidden">Start</span>
             </Button>
           )}
         </div>
       </div>
 
       {/* Players List */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4">
         <div className="space-y-2">
           {/* Alive Players */}
           {alivePlayers.map(p => (
             <div
               key={p.id}
-              className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+              className={`flex items-center space-x-2 sm:space-x-3 p-2 rounded-lg transition-colors ${
                 p.isOwner
                   ? 'bg-yellow-500/10 border border-yellow-500/30'
                   : 'bg-secondary/30 border border-transparent'
               }`}
             >
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${
                 p.isOwner
                   ? 'bg-yellow-500'
                   : p.id === player?.id
@@ -113,7 +115,7 @@ export function PlayersSidebar({ room, player, onStartGame }: PlayersSidebarProp
                   </span>
                 )}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className={`font-medium text-sm ${
                   p.isOwner ? 'text-yellow-300' : 'text-foreground'
                 }`}>
@@ -138,7 +140,7 @@ export function PlayersSidebar({ room, player, onStartGame }: PlayersSidebarProp
 
           {/* Dead Players */}
           {deadPlayers.length > 0 && (
-            <div className="border-t border-border/30 pt-3 mt-3">
+            <div className="border-t border-border/30 pt-2 sm:pt-3 mt-2 sm:mt-3">
               <h4 className="text-xs font-medium text-muted-foreground/60 mb-2 flex items-center">
                 <span className="mr-2">💀</span>
                 Eliminated ({deadPlayers.length})
@@ -147,7 +149,7 @@ export function PlayersSidebar({ room, player, onStartGame }: PlayersSidebarProp
               {deadPlayers.map(p => (
                 <div
                   key={p.id}
-                  className="flex items-center space-x-3 p-3 bg-secondary/10 border border-transparent rounded-lg opacity-60"
+                  className="flex items-center space-x-2 sm:space-x-3 p-2 bg-secondary/10 border border-transparent rounded-lg opacity-60"
                 >
                   <div className="w-10 h-10 bg-gray-500/30 rounded-full flex items-center justify-center border border-border/20">
                     <span className="text-muted-foreground/40 text-xs">💀</span>
@@ -175,17 +177,17 @@ export function PlayersSidebar({ room, player, onStartGame }: PlayersSidebarProp
 
       {/* Game Stats */}
       {room.gameState !== 'waiting' && (
-        <div className="p-4 border-t border-border/30">
-          <div className="grid grid-cols-2 gap-3 text-center">
+        <div className="p-3 sm:p-4 border-t border-border/30">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 text-center">
             <Card className="glass-card border-green-500/20">
-              <CardContent className="p-3">
-                <div className="text-2xl font-bold text-green-400">{civiliansAlive}</div>
+              <CardContent className="p-2 sm:p-3">
+                <div className="text-xl sm:text-2xl font-bold text-green-400">{civiliansAlive}</div>
                 <div className="text-xs text-muted-foreground/70">Civilians</div>
               </CardContent>
             </Card>
             <Card className="glass-card border-red-500/20">
-              <CardContent className="p-3">
-                <div className="text-2xl font-bold text-red-400">{mafiaAlive}</div>
+              <CardContent className="p-2 sm:p-3">
+                <div className="text-xl sm:text-2xl font-bold text-red-400">{mafiaAlive}</div>
                 <div className="text-xs text-muted-foreground/70">Mafia</div>
               </CardContent>
             </Card>

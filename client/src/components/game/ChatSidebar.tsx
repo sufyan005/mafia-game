@@ -113,9 +113,9 @@ export function ChatSidebar({
   };
 
   return (
-    <div className="w-full lg:w-80 glass-card border-l border-border/30 flex flex-col">
+    <div className="flex w-80 max-w-full flex-col glass-card border-l border-border/30 h-full">
       {/* Chat Header */}
-      <div className="p-4 border-b border-border/30">
+      <div className="p-3 sm:p-4 border-b border-border/30">
         <div className="flex items-center justify-between">
           <h3 className="font-medium flex items-center text-sm text-muted-foreground">
             <span className="mr-2 text-lg">{getChatIcon()}</span>
@@ -126,9 +126,9 @@ export function ChatSidebar({
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
         {filteredMessages.length === 0 ? (
-          <div className="text-center text-muted-foreground/50 py-8">
+          <div className="text-center text-muted-foreground/50 py-6 sm:py-8">
             <span className="text-3xl mb-2 block">💬</span>
             <p className="text-sm">No messages yet...</p>
             {!canSendAnyChat && (
@@ -137,14 +137,14 @@ export function ChatSidebar({
           </div>
         ) : (
           filteredMessages.map(msg => (
-            <div key={msg.id} className="flex items-start space-x-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getAvatarColor(msg)}`}>
+            <div key={msg.id} className="flex items-start space-x-2 sm:space-x-3">
+              <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getAvatarColor(msg)}`}>
                 <span className="text-xs font-medium text-foreground">
                   {msg.senderName?.charAt(0)?.toUpperCase() || 'U'}
                 </span>
               </div>
-              <div className="flex-1">
-                <div className="flex items-center space-x-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center space-x-1 sm:space-x-2">
                   <span className={`font-medium text-sm ${getTextColor(msg)}`}>
                     {msg.sender === player.id ? 'You' : msg.senderName}
                   </span>
@@ -155,7 +155,7 @@ export function ChatSidebar({
                     })}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-0.5">{msg.message}</p>
+                <p className="text-sm text-muted-foreground mt-0.5 break-words">{msg.message}</p>
               </div>
             </div>
           ))
@@ -164,7 +164,7 @@ export function ChatSidebar({
       </div>
 
       {/* Chat Input */}
-      <div className="p-4 border-t border-border/30">
+      <div className="p-3 sm:p-4 border-t border-border/30">
         <form onSubmit={handleSendMessage} className="flex space-x-2">
           <Input
             type="text"
@@ -177,12 +177,13 @@ export function ChatSidebar({
             onChange={(e) => setMessage(e.target.value)}
             disabled={!canSendAnyChat}
             className="flex-1 bg-secondary/30 border-border/30 focus:border-primary text-sm placeholder-muted-foreground/50"
+            maxLength={200}
           />
           <Button
             type="submit"
             disabled={!canSendAnyChat || !message.trim()}
             variant="ghost"
-            className={`transition-colors ${
+            className={`transition-colors touch-target ${
               canSendMafiaChat
                 ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30'
                 : 'bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30'
