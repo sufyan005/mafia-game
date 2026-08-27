@@ -82,7 +82,7 @@ export default function GamePage() {
         )}
 
         {/* Main Game Area */}
-        <main className="flex-1 flex flex-col">
+        <main className="flex-1 flex flex-col h-full">
           <GameHeader
             room={room}
             gameState={gameState}
@@ -98,7 +98,7 @@ export default function GamePage() {
             showMobilePlayers={showMobilePlayers}
           />
 
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex overflow-hidden h-full">
             <GameBoard
               room={room}
               player={player}

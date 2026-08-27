@@ -195,11 +195,7 @@ export function useSocket() {
           phase: data.phase,
           timer: data.timer
         }));
-        toast({
-          title: "Phase Changed",
-          description: `Now in ${data.phase} phase`,
-          variant: "default",
-        });
+        // Phase change is shown in the GameHeader, no toast needed
       },
       
       'game-over': (data) => {
@@ -296,11 +292,7 @@ export function useSocket() {
           });
           break;
         case 'phase-transition':
-          toast({
-            title: "Phase Changed",
-            description: event.message,
-            variant: "default",
-          });
+          // Phase transition is shown in the GameHeader, no toast needed
           break;
         case 'player-action':
           toast({

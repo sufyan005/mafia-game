@@ -197,7 +197,7 @@ export function GameBoard({
   };
 
   return (
-    <div className="flex-1 p-4 sm:p-6 overflow-y-auto">
+    <div className="flex-1 p-4 sm:p-6 h-full overflow-y-auto">
       {/* Role Card */}
       <Card className={`glass-card mb-4 sm:mb-6 ${roleInfo.borderColor} bg-gradient-to-r ${roleInfo.gradient}`}>
         <CardContent className="p-4 sm:p-6">
@@ -377,7 +377,7 @@ export function GameBoard({
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4">
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-[200px] sm:max-h-[250px] overflow-y-auto">
             {(() => {
               // Merge immediate events with room events, deduplicating by message + timestamp
               // Immediate events show right away; room events are the server's source of truth
@@ -392,15 +392,15 @@ export function GameBoard({
                   seen.add(key);
                 }
               });
-              // Sort by timestamp (newest last), then show last 5 reversed
+              // Sort by timestamp (newest last), then show all reversed (newest first)
               mergedEvents.sort((a, b) => a.timestamp - b.timestamp);
-              const recentEvents = mergedEvents.slice(-5).reverse();
+              const allEvents = mergedEvents.slice().reverse();
 
-              if (recentEvents.length === 0) {
+              if (allEvents.length === 0) {
                 return <p className="text-muted-foreground text-center py-4 text-sm">No events yet...</p>;
               }
 
-              return recentEvents.map((event, index) => (
+              return allEvents.map((event, index) => (
                 <div key={`${event.timestamp}-${index}`} className="flex items-start space-x-3 p-3 bg-secondary/20 rounded-lg border border-border/20">
                   <span className={`text-base mt-0.5 ${
                     event.type === 'elimination' ? 'text-red-400' :

@@ -131,6 +131,11 @@
     scrollbar-color: hsla(220, 26%, 30%, 0.4) transparent;
   }
 
+  /* Enable smooth momentum scrolling on mobile */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
   *::-webkit-scrollbar {
     width: 4px;
     height: 4px;
