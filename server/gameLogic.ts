@@ -213,10 +213,10 @@ export class GameLogic {
         reason: 'night',
         timestamp,
       });
-
-      // Broadcast updated room state to all clients
-      this.io.to(roomId).emit('room-updated', { room });
     }
+
+    // Broadcast updated room state to all clients (for both elimination and save cases)
+    this.io.to(roomId).emit('room-updated', { room });
 
     // Check win conditions
     if (this.checkWinConditions(roomId)) {
