@@ -382,15 +382,16 @@ export function GameBoard({
           <div className="space-y-3 max-h-[200px] sm:max-h-[250px] overflow-y-auto">
             {(() => {
               // Merge immediate events with room events, deduplicating by message + timestamp
-              // Immediate events show right away; room events are the server's source of truth
-              const mergedEvents = [...room.gameEvents];
+              // Start with immediate events (they arrive first), then add server events not already present
+              const mergedEvents = [...immediateEvents];
               const seen = new Set(
-                room.gameEvents.map(e => `${e.message}-${e.timestamp}`)
+                immediateEvents.map(e => `${e.message}-${e.timestamp}`)
               );
-              immediateEvents.forEach(event => {
+              room.gameEvents.forEach(event => {
                 const key = `${event.message}-${event.timestamp}`;
                 if (!seen.has(key)) {
-                  mergedEvents.push(event);
+                  // room.gameEvents doesn't have 'data' field per schema, add it for consistency
+                  mergedEvents.push({ ...event, data: null });
                   seen.add(key);
                 }
               });
