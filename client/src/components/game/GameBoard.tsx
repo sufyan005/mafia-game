@@ -53,7 +53,9 @@ export function GameBoard({
       if (gameState.role === 'mafia') {
         return Boolean(room.nightVotes && room.nightVotes[player.id]);
       } else if (gameState.role === 'doctor') {
-        return Boolean(room.doctorSave !== undefined && room.doctorSave !== player.id);
+        return Boolean(room.doctorSave !== undefined);
+      } else if (gameState.role === 'detective') {
+        return Boolean(room.detectiveInvestigation);
       }
     } else if (gameState.phase === 'day') {
       return Boolean(room.dayVotes && room.dayVotes[player.id]);
@@ -284,16 +286,16 @@ export function GameBoard({
           <CardContent className="p-4">
             <p className="text-muted-foreground text-sm mb-3">
               {gameState.phase === 'night' && gameState.role === 'mafia' &&
-                'Choose a player to eliminate (all Mafia must agree). Click to change selection.'}
+                'Choose a player to eliminate (all Mafia must agree).'}
               {gameState.phase === 'night' && gameState.role === 'doctor' &&
                 'Choose a player to save (can save yourself). Click to change selection.'}
               {gameState.phase === 'night' && gameState.role === 'detective' &&
-                'Choose a player to investigate. Click to change selection.'}
+                'Choose a player to investigate.'}
               {gameState.phase === 'day' &&
-                'Vote to eliminate a player. Click to change your vote.'}
+                'Vote to eliminate a player.'}
             </p>
 
-            {hasVoted() && (
+            {hasVoted() && gameState.role === 'doctor' && gameState.phase === 'night' && (
               <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 mb-3">
                 <p className="text-green-400 text-sm">
                   ✓ Your action has been recorded. You can still change your selection.
@@ -308,7 +310,7 @@ export function GameBoard({
                   <Button
                     key={targetPlayer.id}
                     variant="ghost"
-                    disabled={hasVoted() && gameState.role !== 'doctor'}
+                    disabled={hasVoted() && !(gameState.role === 'doctor' && gameState.phase === 'night')}
                     className={`h-auto p-3 sm:p-4 flex flex-col space-y-1 sm:space-y-2 transition-all touch-target ${
                       isSelected
                         ? 'bg-green-500/20 border border-green-500/50 hover:bg-green-500/30'
@@ -339,18 +341,18 @@ export function GameBoard({
                 return (
                   <Button
                     variant="ghost"
-                    disabled={gameState.role !== 'doctor'}
+                    disabled={gameState.phase !== 'night' || gameState.role !== 'doctor'}
                     className={`h-auto p-3 sm:p-4 flex flex-col space-y-1 sm:space-y-2 transition-all touch-target ${
                       isSelected
                         ? 'bg-green-500/20 border border-green-500/50 hover:bg-green-500/30'
-                        : 'hover:bg-green-500/10 border border-green-500/30 hover:border-green-500/50'
+                        : 'hover:bg-secondary/50 border border-transparent hover:border-destructive/30'
                     }`}
                     onClick={() => handlePlayerAction(player.id)}
                   >
                     <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ${
-                      isSelected ? 'bg-green-500' : 'bg-green-500/20 border border-green-500/30'
+                      isSelected ? 'bg-green-500' : 'bg-secondary/50 border border-border/30'
                     }`}>
-                      <span className="text-lg text-white">
+                      <span className={`text-lg ${isSelected ? 'text-white' : 'text-muted-foreground'}`}>
                         {player.displayName.charAt(0).toUpperCase()}
                       </span>
                     </div>
