@@ -1,5 +1,4 @@
 import { Server as SocketIOServer } from "socket.io";
-import { type Player } from "@shared/schema";
 
 export interface GameEvent {
   type: string;
@@ -21,18 +20,6 @@ export class ImmediateEventEmitter {
       // Emit immediately without waiting for phase completion
       this.io.to(roomId).emit('immediate-game-event', event);
     }
-  }
-
-  emitElimination(roomId: string, player: Player, reason: string): void {
-    const event: GameEvent = {
-      type: 'elimination',
-      message: `${player.displayName} has been eliminated`,
-      data: { player, reason },
-      timestamp: Date.now(),
-      immediate: true
-    };
-    
-    this.emit(roomId, event);
   }
 
   emitPhaseTransition(roomId: string, fromPhase: string, toPhase: string, timer: number): void {

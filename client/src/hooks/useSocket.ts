@@ -11,8 +11,8 @@ interface SocketEvents {
   'role-assigned': (data: { role: string; teammates: Player[] }) => void;
   'phase-change': (data: { phase: string; timer: number }) => void;
   'timer-update': (data: { timer: number }) => void;
-  'player-eliminated': (data: { player: Player; reason: string; votes?: Record<string, number> }) => void;
-  'no-elimination': (data: { reason: string; votes: Record<string, number> }) => void;
+  'player-eliminated': (data: { player: Player; reason: string; votes?: Record<string, number>; timestamp?: number }) => void;
+  'no-elimination': (data: { reason: string; votes: Record<string, number>; timestamp?: number }) => void;
   'game-over': (data: { winner: string; winners: Player[]; room: Room }) => void;
   'game-restarted': (data: { room: Room }) => void;
   'game-ended': (data: { room: Room }) => void;
@@ -87,6 +87,7 @@ export function useSocket() {
       
       'game-started': (data) => {
         setRoom(data.room);
+        setGameEvents([]);
         setGameState(prev => ({
           ...prev,
           phase: data.room.phase,
@@ -151,12 +152,16 @@ export function useSocket() {
           );
           return { ...prevRoom, players: updatedPlayers };
         });
-        // Always append elimination event immediately
+        // Append elimination event immediately with context-specific message
+        // Use server-provided timestamp for deduplication
+        const reasonText = data.reason === 'night'
+          ? 'was eliminated during the night'
+          : 'was voted out';
         appendGameEvent({
           type: 'elimination',
-          message: `${data.player.displayName} has been eliminated. ${data.reason}`,
+          message: `${data.player.displayName} ${reasonText}`,
           data,
-          timestamp: Date.now(),
+          timestamp: data.timestamp || Date.now(),
         });
       },
       
@@ -167,11 +172,15 @@ export function useSocket() {
           variant: "default",
         });
         // Always append no-elimination event immediately
+        // Use server-provided timestamp and matching message for deduplication
+        const reasonText = data.reason === 'tie'
+          ? 'No one was eliminated due to a tie vote'
+          : `No one was eliminated due to no votes`;
         appendGameEvent({
           type: 'no-elimination',
-          message: `No elimination: ${data.reason}`,
+          message: reasonText,
           data,
-          timestamp: Date.now(),
+          timestamp: data.timestamp || Date.now(),
         });
       },
       
@@ -209,6 +218,7 @@ export function useSocket() {
       
       'game-restarted': (data) => {
         setRoom(data.room);
+        setGameEvents([]);
         setGameState({ timer: 0 });
         setChatMessages([]);
         toast({
@@ -220,6 +230,7 @@ export function useSocket() {
 
       'game-ended': (data) => {
         setRoom(data.room);
+        setGameEvents([]);
         setGameState({ timer: 0 });
         setChatMessages([]);
         toast({

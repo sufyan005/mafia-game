@@ -204,12 +204,14 @@ export class GameLogic {
     storage.updateRoom(room);
 
     if (eliminatedPlayer) {
-      // Emit immediate elimination event
-      this.eventEmitter.emitElimination(roomId, eliminatedPlayer, 'night');
+      const timestamp = Date.now();
+      // The server's gameEvents entry already has this timestamp, so we reuse it
+      room.gameEvents[room.gameEvents.length - 1].timestamp = timestamp;
 
       this.io.to(roomId).emit('player-eliminated', {
         player: eliminatedPlayer,
         reason: 'night',
+        timestamp,
       });
 
       // Broadcast updated room state to all clients
@@ -300,18 +302,26 @@ export class GameLogic {
     storage.updateRoom(room);
 
     if (eliminatedPlayer) {
+      const timestamp = Date.now();
+      // The server's gameEvents entry already has this timestamp, so we reuse it
+      room.gameEvents[room.gameEvents.length - 1].timestamp = timestamp;
+
       this.io.to(roomId).emit('player-eliminated', {
         player: eliminatedPlayer,
         reason: 'day',
         votes: voteCount,
+        timestamp,
       });
 
       // Broadcast updated room state to all clients
       this.io.to(roomId).emit('room-updated', { room });
     } else {
+      const timestamp = Date.now();
+      room.gameEvents[room.gameEvents.length - 1].timestamp = timestamp;
       this.io.to(roomId).emit('no-elimination', {
         reason: isTie ? 'tie' : 'no-votes',
         votes: voteCount,
+        timestamp,
       });
     }
 
