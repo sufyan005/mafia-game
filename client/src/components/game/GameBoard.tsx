@@ -28,13 +28,38 @@ export function GameBoard({
   onDetectiveInvestigate
 }: GameBoardProps) {
   if (!room || !player || room.gameState === 'waiting') {
+    const currentPlayers = room?.players.length || 0;
+    const playersNeeded = Math.max(0, 4 - currentPlayers);
+    const canStart = currentPlayers >= 4 && player?.isOwner;
+
     return (
       <div className="flex-1 p-4 sm:p-6 flex items-center justify-center">
         <Card className="glass-card">
           <CardContent className="p-6 sm:p-8 text-center">
             <div className="text-4xl sm:text-5xl mb-3 sm:mb-4">🎭</div>
             <h2 className="text-lg sm:text-xl font-semibold mb-2">Waiting for game to start...</h2>
-            <p className="text-muted-foreground text-sm">The room owner can start the game when ready.</p>
+            <p className="text-muted-foreground text-sm mb-4">
+              {currentPlayers > 0 ? (
+                <>
+                  <span className="font-medium text-primary">{currentPlayers}</span> / 4 players joined
+                  {playersNeeded > 0 && (
+                    <span className="ml-2 text-muted-foreground">({playersNeeded} more needed)</span>
+                  )}
+                </>
+              ) : (
+                'The room owner can start the game when ready.'
+              )}
+            </p>
+            {currentPlayers > 0 && playersNeeded > 0 && (
+              <p className="text-muted-foreground/60 text-sm">
+                Waiting for {playersNeeded} more player{playersNeeded === 1 ? '' : 's'} to join...
+              </p>
+            )}
+            {canStart && (
+              <p className="text-green-400 text-sm font-medium mt-2">
+                ✓ Ready to start! Room owner can begin the game.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -27,6 +27,19 @@ export function JoinRoomModal({ onJoinRoom }: JoinRoomModalProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Game Requirement Notice */}
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 sm:p-4">
+            <div className="flex items-start space-x-3">
+              <span className="text-lg mt-0.5 shrink-0">ℹ️</span>
+              <div className="text-sm text-primary flex-1">
+                <p className="font-medium">Minimum 4 Players Required</p>
+                <p className="mt-1 text-muted-foreground/80">
+                  The game needs at least <strong>4 players</strong> to start. Join a room and wait for others to join before the room owner can begin the game.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Display Name Input */}
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-2">

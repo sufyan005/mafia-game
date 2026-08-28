@@ -61,6 +61,10 @@ export function PlayersSidebar({ room, player, onStartGame }: PlayersSidebarProp
 
   const { mafiaAlive, civiliansAlive } = getGameStats();
 
+  const currentPlayers = room.players.length;
+  const playersNeeded = Math.max(0, 4 - currentPlayers);
+  const isWaitingForPlayers = room.gameState === 'waiting' && currentPlayers < 4;
+
   return (
     <aside className="flex w-full lg:w-72 glass-card border-l border-border/30 flex-col h-full">
       {/* Players Header */}
@@ -81,6 +85,22 @@ export function PlayersSidebar({ room, player, onStartGame }: PlayersSidebarProp
             </Button>
           )}
         </div>
+
+        {/* Player count status for waiting state */}
+        {room.gameState === 'waiting' && (
+          <div className="mt-2 flex items-center justify-between text-xs">
+            <span className={`font-medium ${
+              currentPlayers >= 4 ? 'text-green-400' : 'text-primary'
+            }`}>
+              {currentPlayers >= 4
+                ? '✓ Ready to start!'
+                : `${currentPlayers}/4 players (${playersNeeded} more needed)`}
+            </span>
+            {player?.isOwner && currentPlayers >= 4 && (
+              <span className="text-green-400 font-medium">Start game available</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Players List */}
