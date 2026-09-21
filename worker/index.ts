@@ -13,7 +13,13 @@ export default { async fetch(request: Request, env: Env): Promise<Response> {
     if (room !== "room1" && room !== "room2") return new Response("Room not found", { status: 404 });
     return env.ROOM.get(env.ROOM.idFromName(room)).fetch(new Request(request, { headers: new Headers({ ...Object.fromEntries(request.headers), "X-Room": room }) }));
   }
-  return env.ASSETS.fetch(request);
+  const response = await env.ASSETS.fetch(request);
+  if (url.pathname === "/" || url.pathname.endsWith(".html")) {
+    const headers = new Headers(response.headers);
+    headers.set("Cache-Control", "no-store");
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+  }
+  return response;
 } };
 
 export class RoomDurableObject {
@@ -65,6 +71,7 @@ export class RoomDurableObject {
       const command = JSON.parse(raw) as Command;
       if (command.event === "join-room") return await this.join(socket, command.data);
       const player = this.room.players.find(item => item.id === this.sockets.get(socket));
+      if (command.event === "get-room-state") return this.send(socket, "room-state", { room: this.room });
       if (command.event === "get-room-status" && typeof command.data === "string") return this.send(socket, "room-status", { roomId: command.data, playerCount: this.room.players.length, gameState: this.room.gameState });
       if (!player) return this.send(socket, "error", { message: "Join a room first" });
       if (command.event === "start-game") return await this.start(player, command.data);
@@ -76,9 +83,9 @@ export class RoomDurableObject {
     } catch { this.send(socket, "error", { message: "Invalid request" }); }
   }
 
-  private async join(socket: WebSocket, raw: unknown): Promise<void> { const data = joinRoomSchema.parse(raw); this.pruneDisconnectedPlayers(); if (data.room !== this.room.id || this.room.players.length >= 20 || this.room.gameState !== "waiting") return this.send(socket, "error", { message: "Cannot join room" }); const id = typeof (raw as { clientId?: unknown })?.clientId === "string" ? (raw as { clientId: string }).clientId : crypto.randomUUID(); const player: Player = { id, displayName: data.displayName, room: data.room, isAlive: true, isOwner: this.room.players.length === 0, votes: {} }; this.sockets.set(socket, id); this.room.players.push(player); await this.save(); this.send(socket, "joined-room", { room: this.room, player }); this.broadcast("player-joined", { player, room: this.room }); this.broadcast("room-updated", { room: this.room }); }
+  private async join(socket: WebSocket, raw: unknown): Promise<void> { const data = joinRoomSchema.parse(raw); this.pruneDisconnectedPlayers(); if (data.room !== this.room.id || this.room.players.length >= 20 || this.room.gameState !== "waiting") return this.send(socket, "error", { message: "Cannot join room" }); const id = typeof (raw as { clientId?: unknown })?.clientId === "string" ? (raw as { clientId: string }).clientId : crypto.randomUUID(); const existingIndex = this.room.players.findIndex(item => item.id === id); const existingPlayer = existingIndex >= 0 ? this.room.players[existingIndex] : undefined; const player: Player = existingPlayer ? { ...existingPlayer, displayName: data.displayName } : { id, displayName: data.displayName, room: data.room, isAlive: true, isOwner: this.room.players.length === 0, votes: {} }; this.sockets.forEach((playerId, connectedSocket) => { if (playerId === id && connectedSocket !== socket) this.sockets.delete(connectedSocket); }); this.sockets.set(socket, id); if (existingIndex >= 0) this.room.players[existingIndex] = player; else this.room.players.push(player); await this.save(); this.send(socket, "joined-room", { room: this.room, player }); this.broadcast("player-joined", { player, room: this.room }); this.broadcast("room-updated", { room: this.room }); this.broadcast("room-state", { room: this.room }); }
 
-  private pruneDisconnectedPlayers(): void { const connectedIds = new Set([...this.sockets.entries()].filter(([socket]) => socket.readyState === WebSocket.OPEN).map(([, playerId]) => playerId).filter(Boolean)); this.room.players = this.room.players.filter(player => connectedIds.has(player.id)); if (this.room.players.length > 0 && !this.room.players.some(player => player.isOwner)) this.room.players[0].isOwner = true; }
+  private pruneDisconnectedPlayers(): void { const connectedIds = new Set([...this.sockets.entries()].filter(([socket]) => socket.readyState === WebSocket.OPEN).map(([, playerId]) => playerId).filter(Boolean)); const seenIds = new Set<string>(); this.room.players = this.room.players.filter(player => connectedIds.has(player.id) && !seenIds.has(player.id) && seenIds.add(player.id)); if (this.room.players.length > 0 && !this.room.players.some(player => player.isOwner)) this.room.players[0].isOwner = true; }
 
   private async start(player: Player, raw: unknown): Promise<void> { const config = startGameSchema.parse(raw); if (!player.isOwner || this.room.players.length < 4 || config.mafiaCount + config.doctorCount + config.detectiveCount > this.room.players.length) return this.toPlayer(player.id, "error", { message: "Cannot start game" }); const roles: Player["role"][] = [...Array(config.mafiaCount).fill("mafia"), ...Array(config.doctorCount).fill("doctor"), ...Array(config.detectiveCount).fill("detective")]; while (roles.length < this.room.players.length) roles.push("villager"); for (let index = roles.length - 1; index > 0; index--) { const other = Math.floor(Math.random() * (index + 1)); [roles[index], roles[other]] = [roles[other], roles[index]]; } this.room.players.forEach((item, index) => { item.role = roles[index]; item.isAlive = true; }); this.room.roleConfig = config; this.room.gameState = "break"; this.room.phase = "break"; this.room.timer = durations.break; this.deadline = Date.now() + durations.break * 1000; this.room.nightVotes = {}; this.room.dayVotes = {}; this.room.gameEvents = []; await this.save(); this.broadcast("game-started", { room: this.room, players: this.room.players }); this.room.players.forEach(item => this.toPlayer(item.id, "role-assigned", { role: item.role, teammates: item.role === "mafia" ? this.room.players.filter(other => other.role === "mafia" && other.id !== item.id) : [] })); this.broadcast("phase-change", { phase: "break", timer: durations.break }); await this.state.storage.setAlarm(Date.now() + 1000); }
 

@@ -20,6 +20,7 @@ interface SocketEvents {
   'action-confirmed': (data: { action: string; target: string }) => void;
   'investigation-result': (data: { target: string; targetName: string; isMafia: boolean }) => void;
   'room-updated': (data: { room: Room }) => void;
+  'room-state': (data: { room: Room }) => void;
   'chat-message': (message: ChatMessage) => void;
   'error': (data: { message: string }) => void;
   'room-status': (data: { roomId: string; playerCount: number; gameState: string }) => void;
@@ -113,6 +114,20 @@ export function useSocket() {
           ...prev,
           phase: data.room.phase,
           timer: data.room.timer
+        }));
+      },
+
+      'room-state': (data: { room: Room }) => {
+        setRoom(data.room);
+        const currentSocketId = socketRef.current?.id;
+        if (currentSocketId) {
+          const updatedPlayer = data.room.players.find(p => p.id === currentSocketId);
+          if (updatedPlayer) setPlayer(updatedPlayer);
+        }
+        setGameState(prev => ({
+          ...prev,
+          phase: data.room.phase,
+          timer: data.room.timer,
         }));
       },
       

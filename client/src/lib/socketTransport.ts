@@ -16,7 +16,9 @@ class CloudflareSocket implements GameSocket {
   private roomId: 'room1' | 'room2' = 'room1';
   private handlers = new Map<string, Set<EventHandler>>();
   private anyHandlers = new Set<(event: string, ...args: any[]) => void>();
+  private clientId = crypto.randomUUID();
   private pendingJoin?: { room: 'room1' | 'room2'; data: unknown };
+  private roomSyncTimer?: ReturnType<typeof setInterval>;
   private reconnectTimer?: ReturnType<typeof setTimeout>;
   private manuallyDisconnected = false;
 
@@ -40,6 +42,9 @@ class CloudflareSocket implements GameSocket {
     if (event === 'join-room' && data && typeof data === 'object' && 'room' in data) {
       const room = (data as { room: 'room1' | 'room2' }).room;
       this.pendingJoin = { room, data };
+      if (!this.roomSyncTimer) {
+        this.roomSyncTimer = setInterval(() => this.emit('get-room-state'), 1000);
+      }
       if (room !== this.roomId) {
         this.disconnect();
         this.manuallyDisconnected = false;
@@ -53,7 +58,10 @@ class CloudflareSocket implements GameSocket {
       }
     }
     if (this.socket?.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify({ event, data }));
+      const payload = event === 'join-room' && data && typeof data === 'object'
+        ? { ...data, clientId: this.getClientId() }
+        : data;
+      this.socket.send(JSON.stringify({ event, data: payload }));
       if (event === 'join-room') this.pendingJoin = undefined;
     }
     return this;
@@ -62,6 +70,8 @@ class CloudflareSocket implements GameSocket {
   disconnect(): this {
     this.manuallyDisconnected = true;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    if (this.roomSyncTimer) clearInterval(this.roomSyncTimer);
+    this.roomSyncTimer = undefined;
     this.socket?.close();
     this.socket = null;
     return this;
@@ -78,7 +88,7 @@ class CloudflareSocket implements GameSocket {
       if (this.pendingJoin) {
         const join = this.pendingJoin;
         this.pendingJoin = undefined;
-        socket.send(JSON.stringify({ event: 'join-room', data: join.data }));
+        socket.send(JSON.stringify({ event: 'join-room', data: { ...(join.data as object), clientId: this.getClientId() } }));
       }
     });
     socket.addEventListener('close', () => {
@@ -99,12 +109,7 @@ class CloudflareSocket implements GameSocket {
   }
 
   private getClientId(): string {
-    const storageKey = 'mafia-client-id';
-    const stored = window.localStorage.getItem(storageKey);
-    if (stored) return stored;
-    const id = crypto.randomUUID();
-    window.localStorage.setItem(storageKey, id);
-    return id;
+    return this.clientId;
   }
 
   private dispatch(event: string, ...args: any[]): void {
