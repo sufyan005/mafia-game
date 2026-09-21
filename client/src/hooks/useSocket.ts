@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { type GameSocket, createGameSocket } from '@/lib/socketTransport';
 import { type Room, type Player, type ChatMessage } from '@shared/schema';
 import { useToast } from './use-toast';
 
@@ -26,7 +26,7 @@ interface SocketEvents {
 }
 
 export function useSocket() {
-  const socketRef = useRef<Socket | null>(null);
+  const socketRef = useRef<GameSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [room, setRoom] = useState<Room | null>(null);
   const [gameEvents, setGameEvents] = useState<Array<{ type: string; message: string; data: any; timestamp: number }>>([]);
@@ -48,9 +48,7 @@ export function useSocket() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const socket = io({
-      autoConnect: true,
-    });
+    const socket = createGameSocket();
 
     socketRef.current = socket;
 
