@@ -17,6 +17,8 @@ class CloudflareSocket implements GameSocket {
   private handlers = new Map<string, Set<EventHandler>>();
   private anyHandlers = new Set<(event: string, ...args: any[]) => void>();
   private pendingJoin?: { room: 'room1' | 'room2'; data: unknown };
+  private reconnectTimer?: ReturnType<typeof setTimeout>;
+  private manuallyDisconnected = false;
 
   constructor() {
     this.connect();
@@ -37,21 +39,29 @@ class CloudflareSocket implements GameSocket {
   emit(event: string, data?: unknown): this {
     if (event === 'join-room' && data && typeof data === 'object' && 'room' in data) {
       const room = (data as { room: 'room1' | 'room2' }).room;
+      this.pendingJoin = { room, data };
       if (room !== this.roomId) {
-        this.pendingJoin = { room, data };
         this.disconnect();
+        this.manuallyDisconnected = false;
         this.roomId = room;
         this.connect();
+        return this;
+      }
+      if (this.socket?.readyState !== WebSocket.OPEN) {
+        if (!this.reconnectTimer) this.connect();
         return this;
       }
     }
     if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify({ event, data }));
+      if (event === 'join-room') this.pendingJoin = undefined;
     }
     return this;
   }
 
   disconnect(): this {
+    this.manuallyDisconnected = true;
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.socket?.close();
     this.socket = null;
     return this;
@@ -61,16 +71,23 @@ class CloudflareSocket implements GameSocket {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const socket = new WebSocket(`${protocol}//${window.location.host}/ws/${this.roomId}`);
     this.socket = socket;
+    this.manuallyDisconnected = false;
     socket.addEventListener('open', () => {
       this.id = this.getClientId();
       this.dispatch('connect');
       if (this.pendingJoin) {
         const join = this.pendingJoin;
         this.pendingJoin = undefined;
-        this.emit('join-room', join.data);
+        socket.send(JSON.stringify({ event: 'join-room', data: join.data }));
       }
     });
-    socket.addEventListener('close', () => this.dispatch('disconnect'));
+    socket.addEventListener('close', () => {
+      if (this.socket !== socket) return;
+      this.dispatch('disconnect');
+      if (!this.manuallyDisconnected) {
+        this.reconnectTimer = setTimeout(() => this.connect(), 1000);
+      }
+    });
     socket.addEventListener('message', message => {
       try {
         const payload = JSON.parse(message.data as string) as { event: string; data: unknown };
