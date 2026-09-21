@@ -21,7 +21,7 @@ class CloudflareSocket implements GameSocket {
   private manuallyDisconnected = false;
 
   constructor() {
-    this.connect();
+    queueMicrotask(() => this.connect());
   }
 
   on(event: string, handler: EventHandler): this {
