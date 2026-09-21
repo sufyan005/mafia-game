@@ -114,6 +114,7 @@ class CloudflareSocket implements GameSocket {
 }
 
 export function createGameSocket(): GameSocket {
-  if (import.meta.env.VITE_CLOUDFLARE === 'true') return new CloudflareSocket();
+  const isCloudflareHost = window.location.hostname.endsWith('.workers.dev');
+  if (import.meta.env.VITE_CLOUDFLARE === 'true' || isCloudflareHost) return new CloudflareSocket();
   return io({ autoConnect: true });
 }
