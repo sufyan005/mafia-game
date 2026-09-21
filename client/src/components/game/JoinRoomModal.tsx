@@ -10,11 +10,14 @@ interface JoinRoomModalProps {
 export function JoinRoomModal({ onJoinRoom }: JoinRoomModalProps) {
   const [displayName, setDisplayName] = useState("");
   const [selectedRoom, setSelectedRoom] = useState<'room1' | 'room2' | null>(null);
+  const [isJoining, setIsJoining] = useState(false);
 
   const handleJoinRoom = () => {
-    if (!displayName.trim() || !selectedRoom) return;
+    if (isJoining || !displayName.trim() || !selectedRoom) return;
 
+    setIsJoining(true);
     onJoinRoom(selectedRoom, displayName.trim());
+    window.setTimeout(() => setIsJoining(false), 2000);
   };
 
   return (
@@ -90,7 +93,7 @@ export function JoinRoomModal({ onJoinRoom }: JoinRoomModalProps) {
 
           <Button
             onClick={handleJoinRoom}
-            disabled={!displayName.trim() || !selectedRoom}
+            disabled={isJoining || !displayName.trim() || !selectedRoom}
             variant="ghost"
             className="w-full bg-primary/20 hover:bg-primary/30 text-foreground border border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-secondary/30"
           >

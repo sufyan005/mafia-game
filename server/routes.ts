@@ -34,6 +34,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     socket.on('join-room', (data) => {
       try {
         const { room, displayName } = joinRoomSchema.parse(data);
+        const existingPlayer = storage.getPlayer(socket.id);
+
+        // A reconnect or a rapid repeated join from the same socket must not
+        // add another player to the room.
+        if (existingPlayer) {
+          if (existingPlayer.room !== room) {
+            socket.emit('error', { message: 'Already joined another room' });
+            return;
+          }
+
+          existingPlayer.displayName = displayName;
+          socket.join(room);
+          const updatedRoom = storage.getRoom(room)!;
+          socket.emit('joined-room', { room: updatedRoom, player: existingPlayer });
+          return;
+        }
         
         const roomData = storage.getRoom(room);
         if (!roomData) {
@@ -296,6 +312,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (gameEndedByDisconnect) {
             console.log(`Game in room ${player.room} ended due to player disconnect`);
           }
+        }
+
+        // An empty room must be reusable after a finished or abandoned game.
+        if (room.players.length === 0) {
+          room.gameState = 'waiting';
+          room.phase = undefined;
+          room.timer = 0;
+          room.winner = undefined;
+          room.nightVotes = {};
+          room.dayVotes = {};
+          room.gameEvents = [];
+          storage.updateRoom(room);
         }
       }
 
