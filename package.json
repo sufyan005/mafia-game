@@ -46,5 +46,8 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260921.1"
   }
 }

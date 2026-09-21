@@ -63,8 +63,8 @@ export class RoomDurableObject {
   private async load(): Promise<void> { if (!this.loaded) this.loaded = this.state.storage.get<Stored>("game").then(value => { if (value) { this.room = value.room; this.nightTarget = value.nightTarget; this.deadline = value.deadline; } }); await this.loaded; }
   private save(): Promise<void> { return this.state.storage.put("game", { room: this.room, nightTarget: this.nightTarget, deadline: this.deadline }); }
   private send(socket: WebSocket, event: string, data: unknown): void { if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ event, data })); }
-  private broadcast(event: string, data: unknown): void { this.sockets.forEach(socket => this.send(socket, event, data)); }
-  private toPlayer(id: string, event: string, data: unknown): void { this.sockets.forEach((socket, playerId) => { if (playerId === id) this.send(socket, event, data); }); }
+  private broadcast(event: string, data: unknown): void { this.sockets.forEach((playerId, socket) => { void playerId; this.send(socket, event, data); }); }
+  private toPlayer(id: string, event: string, data: unknown): void { this.sockets.forEach((playerId, socket) => { if (playerId === id) this.send(socket, event, data); }); }
 
   private async command(socket: WebSocket, raw: string): Promise<void> {
     try {
