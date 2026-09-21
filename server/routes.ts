@@ -272,34 +272,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Disconnect
     socket.on('disconnect', () => {
       const player = storage.getPlayer(socket.id);
-      if (player) {
-        // Check if game is in progress before removing player
-        const roomBeforeRemoval = storage.getRoom(player.room);
-        const isGameInProgress = roomBeforeRemoval && roomBeforeRemoval.gameState !== 'waiting';
+      if (!player) return;
 
-        storage.removePlayerFromRoom(player.room, socket.id);
+      // Check if game is in progress before removing player
+      const roomBeforeRemoval = storage.getRoom(player.room);
+      const isGameInProgress = roomBeforeRemoval && roomBeforeRemoval.gameState !== 'waiting' && roomBeforeRemoval.gameState !== 'ended';
 
-        const room = storage.getRoom(player.room);
-        if (room) {
-          socket.to(player.room).emit('player-left', {
-            player,
-            room,
-          });
+      storage.removePlayerFromRoom(player.room, socket.id);
 
-          // Emit updated room state to all players including owner
-          io.to(player.room).emit('room-updated', { room });
+      const room = storage.getRoom(player.room);
+      if (room) {
+        socket.to(player.room).emit('player-left', {
+          player,
+          room,
+        });
 
-          // If game was in progress, check win conditions (disconnected player is treated as eliminated)
-          if (isGameInProgress) {
-            const gameEndedByDisconnect = gameLogic.checkWinConditions(player.room);
-            if (gameEndedByDisconnect) {
-              console.log(`Game in room ${player.room} ended due to player disconnect`);
-            }
+        // Emit updated room state to all players including owner
+        io.to(player.room).emit('room-updated', { room });
+
+        // If the room was mid-game, resolve any win state immediately after removal.
+        if (isGameInProgress) {
+          const gameEndedByDisconnect = gameLogic.checkWinConditions(player.room);
+          if (gameEndedByDisconnect) {
+            console.log(`Game in room ${player.room} ended due to player disconnect`);
           }
         }
-
-        console.log(`${player.displayName} disconnected from ${player.room}`);
       }
+
+      console.log(`${player.displayName} disconnected from ${player.room}`);
     });
   });
 

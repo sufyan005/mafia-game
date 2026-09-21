@@ -99,6 +99,29 @@ export class RoomDurableObject {
   private async investigate(player: Player, raw: unknown): Promise<void> { const { target } = detectiveInvestigateSchema.parse(raw); const targetPlayer = this.room.players.find(item => item.id === target); if (!player.isAlive || player.role !== "detective" || this.room.phase !== "night" || this.room.detectiveInvestigation || !targetPlayer) return this.toPlayer(player.id, "error", { message: "Invalid investigation" }); this.room.detectiveInvestigation = target; await this.save(); this.toPlayer(player.id, "investigation-result", { target, targetName: targetPlayer.displayName, isMafia: targetPlayer.role === "mafia" }); }
   private async chat(player: Player, raw: unknown): Promise<void> { const { message, type } = chatMessageInputSchema.parse(raw); if ((type === "mafia" && (player.role !== "mafia" || this.room.phase !== "night")) || (type === "public" && this.room.phase !== "day")) return this.toPlayer(player.id, "error", { message: "Cannot send message" }); const chat: ChatMessage = { id: crypto.randomUUID(), sender: player.id, senderName: player.displayName, message, type, timestamp: Date.now(), room: this.room.id }; if (type === "mafia") this.room.players.filter(item => item.role === "mafia").forEach(item => this.toPlayer(item.id, "chat-message", chat)); else this.broadcast("chat-message", chat); }
   private async reset(player: Player, event: string): Promise<void> { if (!player.isOwner) return this.toPlayer(player.id, "error", { message: "Only room owner can reset the game" }); this.room.gameState = "waiting"; this.room.phase = undefined; this.room.timer = 0; this.room.nightVotes = {}; this.room.dayVotes = {}; this.room.doctorSave = undefined; this.room.detectiveInvestigation = undefined; this.room.gameEvents = []; this.room.winner = undefined; this.room.players.forEach(item => { item.role = undefined; item.isAlive = true; item.votes = {}; }); this.nightTarget = undefined; this.deadline = undefined; await this.save(); await this.state.storage.deleteAlarm(); this.broadcast(event === "restart-game" ? "game-restarted" : "game-ended", { room: this.room }); }
-  private async leave(socket: WebSocket): Promise<void> { const id = this.sockets.get(socket); this.sockets.delete(socket); if (!id) return; const player = this.room.players.find(item => item.id === id); if (!player) return; this.room.players = this.room.players.filter(item => item.id !== id); if (player.isOwner && this.room.players[0]) this.room.players[0].isOwner = true; await this.save(); this.broadcast("player-left", { player, room: this.room }); this.broadcast("room-updated", { room: this.room }); }
+  private async leave(socket: WebSocket): Promise<void> {
+    const id = this.sockets.get(socket);
+    this.sockets.delete(socket);
+    if (!id) return;
+
+    const replacement = [...this.sockets.entries()].some(([connectedSocket, playerId]) => connectedSocket.readyState === WebSocket.OPEN && playerId === id);
+    if (replacement) return;
+
+    const player = this.room.players.find(item => item.id === id);
+    if (!player) return;
+
+    const wasGameInProgress = this.room.gameState !== "waiting" && this.room.gameState !== "ended";
+    const wasOwner = player.isOwner;
+    this.room.players = this.room.players.filter(item => item.id !== id);
+    if (wasOwner && this.room.players[0]) this.room.players[0].isOwner = true;
+
+    await this.save();
+    this.broadcast("player-left", { player, room: this.room });
+    this.broadcast("room-updated", { room: this.room });
+
+    if (wasGameInProgress) {
+      await this.winner();
+    }
+  }
 }
 function createRoom(id: string): Room { return { id, players: [], gameState: "waiting", timer: 0, nightVotes: {}, dayVotes: {}, gameEvents: [] }; }

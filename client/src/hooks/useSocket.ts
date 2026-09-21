@@ -86,11 +86,17 @@ export function useSocket() {
       
       'game-started': (data) => {
         setRoom(data.room);
+        const currentSocketId = socketRef.current?.id;
+        const updatedPlayer = data.room.players.find(p => p.id === currentSocketId);
+        if (updatedPlayer) {
+          setPlayer(updatedPlayer);
+        }
         setGameEvents([]);
         setGameState(prev => ({
           ...prev,
           phase: data.room.phase,
-          timer: data.room.timer
+          timer: data.room.timer,
+          role: updatedPlayer?.role ?? prev.role,
         }));
         toast({
           title: "Game Started!",
@@ -104,30 +110,34 @@ export function useSocket() {
         // Also update the current player from the room's players
         // Use a ref-backed lookup to avoid stale closure issues
         const currentSocketId = socketRef.current?.id;
-        if (currentSocketId) {
-          const updatedPlayer = data.room.players.find(p => p.id === currentSocketId);
-          if (updatedPlayer) {
-            setPlayer(updatedPlayer);
-          }
+        const updatedPlayer = currentSocketId
+          ? data.room.players.find(p => p.id === currentSocketId)
+          : undefined;
+        if (updatedPlayer) {
+          setPlayer(updatedPlayer);
         }
         setGameState(prev => ({
           ...prev,
           phase: data.room.phase,
-          timer: data.room.timer
+          timer: data.room.timer,
+          role: updatedPlayer?.role ?? prev.role,
         }));
       },
 
       'room-state': (data: { room: Room }) => {
         setRoom(data.room);
         const currentSocketId = socketRef.current?.id;
-        if (currentSocketId) {
-          const updatedPlayer = data.room.players.find(p => p.id === currentSocketId);
-          if (updatedPlayer) setPlayer(updatedPlayer);
+        const updatedPlayer = currentSocketId
+          ? data.room.players.find(p => p.id === currentSocketId)
+          : undefined;
+        if (updatedPlayer) {
+          setPlayer(updatedPlayer);
         }
         setGameState(prev => ({
           ...prev,
           phase: data.room.phase,
           timer: data.room.timer,
+          role: updatedPlayer?.role ?? prev.role,
         }));
       },
       

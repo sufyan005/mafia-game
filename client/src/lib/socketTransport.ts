@@ -10,6 +10,42 @@ export type GameSocket = {
   onAny?: (handler: (event: string, ...args: any[]) => void) => GameSocket;
 };
 
+class SocketIoGameSocket implements GameSocket {
+  private socket = io({ autoConnect: true });
+  private joinData?: unknown;
+
+  constructor() {
+    this.socket.on('connect', () => {
+      if (this.joinData) this.socket.emit('join-room', this.joinData);
+    });
+  }
+
+  get id(): string | undefined {
+    return this.socket.id;
+  }
+
+  on(event: string, handler: EventHandler): this {
+    this.socket.on(event, handler);
+    return this;
+  }
+
+  onAny(handler: (event: string, ...args: any[]) => void): this {
+    this.socket.onAny(handler);
+    return this;
+  }
+
+  emit(event: string, data?: unknown): this {
+    if (event === 'join-room') this.joinData = data;
+    this.socket.emit(event, data);
+    return this;
+  }
+
+  disconnect(): this {
+    this.socket.disconnect();
+    return this;
+  }
+}
+
 class CloudflareSocket implements GameSocket {
   id = '';
   private socket: WebSocket | null = null;
@@ -17,7 +53,7 @@ class CloudflareSocket implements GameSocket {
   private handlers = new Map<string, Set<EventHandler>>();
   private anyHandlers = new Set<(event: string, ...args: any[]) => void>();
   private clientId = crypto.randomUUID();
-  private pendingJoin?: { room: 'room1' | 'room2'; data: unknown };
+  private joinData?: { room: 'room1' | 'room2'; data: unknown };
   private roomSyncTimer?: ReturnType<typeof setInterval>;
   private reconnectTimer?: ReturnType<typeof setTimeout>;
   private manuallyDisconnected = false;
@@ -41,7 +77,7 @@ class CloudflareSocket implements GameSocket {
   emit(event: string, data?: unknown): this {
     if (event === 'join-room' && data && typeof data === 'object' && 'room' in data) {
       const room = (data as { room: 'room1' | 'room2' }).room;
-      this.pendingJoin = { room, data };
+      this.joinData = { room, data };
       if (!this.roomSyncTimer) {
         this.roomSyncTimer = setInterval(() => this.emit('get-room-state'), 1000);
       }
@@ -62,7 +98,6 @@ class CloudflareSocket implements GameSocket {
         ? { ...data, clientId: this.getClientId() }
         : data;
       this.socket.send(JSON.stringify({ event, data: payload }));
-      if (event === 'join-room') this.pendingJoin = undefined;
     }
     return this;
   }
@@ -85,10 +120,8 @@ class CloudflareSocket implements GameSocket {
     socket.addEventListener('open', () => {
       this.id = this.getClientId();
       this.dispatch('connect');
-      if (this.pendingJoin) {
-        const join = this.pendingJoin;
-        this.pendingJoin = undefined;
-        socket.send(JSON.stringify({ event: 'join-room', data: { ...(join.data as object), clientId: this.getClientId() } }));
+      if (this.joinData) {
+        socket.send(JSON.stringify({ event: 'join-room', data: { ...(this.joinData.data as object), clientId: this.getClientId() } }));
       }
     });
     socket.addEventListener('close', () => {
@@ -121,5 +154,5 @@ class CloudflareSocket implements GameSocket {
 export function createGameSocket(): GameSocket {
   const isCloudflareHost = window.location.hostname.endsWith('.workers.dev');
   if (import.meta.env.VITE_CLOUDFLARE === 'true' || isCloudflareHost) return new CloudflareSocket();
-  return io({ autoConnect: true });
+  return new SocketIoGameSocket();
 }
